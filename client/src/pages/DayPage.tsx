@@ -53,13 +53,14 @@ export function DayPage() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className={`grid gap-4 ${isAdmin ? 'md:grid-cols-3' : ''}`}>
         <StatusCard title="On call today" tone="brand">
           {day.onCall ? <BigResident id={day.onCall} /> : <p className="text-sm text-slate-500">No one assigned</p>}
           <p className="mt-2 text-xs text-slate-500">
             Tomorrow: <ResidentName id={data.calls[addDays(date, 1)]} />
           </p>
         </StatusCard>
+        {isAdmin && (
         <StatusCard title="Post-call (off)">
           {day.postCall ? (
             <>
@@ -74,6 +75,8 @@ export function DayPage() {
             <p className="text-sm text-slate-500">Nobody</p>
           )}
         </StatusCard>
+        )}
+        {isAdmin && (
         <StatusCard title={`On vacation (${vacation.length})`}>
           {vacation.length === 0 && <p className="text-sm text-slate-500">Nobody</p>}
           <ul className="space-y-1 text-sm">
@@ -90,6 +93,7 @@ export function DayPage() {
             ))}
           </ul>
         </StatusCard>
+        )}
       </div>
 
       {day.workingDay && (
@@ -115,12 +119,12 @@ export function DayPage() {
                     return (
                       <div key={id}>
                         <ResidentName id={id} phone />
-                        {r.coveringFor && (
+                        {isAdmin && r.coveringFor && (
                           <div className="text-xs text-slate-500">
                             covering <ResidentName id={r.coveringFor} short /> ({r.monthly === 'Post-Call' ? 'post-call' : 'vacation'})
                           </div>
                         )}
-                        {r.manual && <span className="ml-1 rounded bg-slate-100 px-1 text-[10px] text-slate-600">manual</span>}
+                        {isAdmin && r.manual && <span className="ml-1 rounded bg-slate-100 px-1 text-[10px] text-slate-600">manual</span>}
                         {r.onCall && <span className="ml-1 rounded bg-brand-100 px-1 text-[10px] font-semibold text-brand-800">on call</span>}
                       </div>
                     );
@@ -132,6 +136,8 @@ export function DayPage() {
         </div>
       )}
 
+      {isAdmin && (
+      <>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         {covering.length > 0 && (
           <div className="card">
@@ -191,6 +197,8 @@ export function DayPage() {
             </Link>
           )}
         </div>
+      )}
+      </>
       )}
 
       {adjusting && <AdjustModal day={day} onClose={() => setAdjusting(false)} />}

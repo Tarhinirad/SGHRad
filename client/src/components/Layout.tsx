@@ -3,12 +3,12 @@ import { NavLink } from 'react-router-dom';
 import { useStore } from '../store';
 
 const NAV = [
-  { to: '/', label: 'Today', end: true },
-  { to: '/week', label: 'Week' },
+  { to: '/', label: 'Today', end: true, public: true },
+  { to: '/week', label: 'Week', public: true },
   { to: '/year', label: 'Year grid' },
   { to: '/calls', label: 'Calls' },
   { to: '/vacations', label: 'Vacations' },
-  { to: '/residents', label: 'Residents' },
+  { to: '/residents', label: 'Residents', public: true },
   { to: '/warnings', label: 'Warnings' },
   { to: '/import', label: 'Import / Export' },
   { to: '/settings', label: 'Settings' },
@@ -18,9 +18,10 @@ const NAV = [
 export function Layout({ children, onLogout, onLogin, guest }: { children: ReactNode; onLogout: () => void; onLogin: () => void; guest: boolean }) {
   const { isAdmin, userName, engine, data } = useStore();
   const [open, setOpen] = useState(false);
-  const upcoming = engine.day(data.today).issues.filter((i) => i.severity !== 'info').length;
+  const upcoming = isAdmin ? engine.day(data.today).issues.filter((i) => i.severity !== 'info').length : 0;
 
-  const links = NAV.filter((n) => !n.admin || isAdmin);
+  // View mode shows only the public pages; admins see everything.
+  const links = NAV.filter((n) => isAdmin || n.public);
   const link = (n: (typeof NAV)[number]) => (
     <NavLink
       key={n.to}

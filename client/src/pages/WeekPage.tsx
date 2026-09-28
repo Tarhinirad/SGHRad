@@ -5,7 +5,7 @@ import { useStore } from '../store';
 
 export function WeekPage() {
   const { date: param } = useParams();
-  const { data, engine } = useStore();
+  const { data, engine, isAdmin } = useStore();
   const navigate = useNavigate();
   const start = startOfWeek(param && isValidISO(param) ? param : data.today);
   const days = engine.range(start, addDays(start, 6));
@@ -62,7 +62,7 @@ export function WeekPage() {
                     {formatDateShort(d.date)}
                   </Link>
                   {d.holiday && <div className="font-normal normal-case">holiday</div>}
-                  {d.issues.some((i) => i.severity !== 'info') && <span className="ml-1 text-amber-600" title="Warnings">⚠</span>}
+                  {isAdmin && d.issues.some((i) => i.severity !== 'info') && <span className="ml-1 text-amber-600" title="Warnings">⚠</span>}
                 </th>
               ))}
             </tr>
@@ -74,9 +74,9 @@ export function WeekPage() {
               'bg-brand-50/40',
             )}
             {rotations.map((rot) => row(<RotationChip name={rot} />, (d) => (d.workingDay ? names(d.rotations[rot] ?? []) : null)))}
-            {row(<span className="text-slate-600">Post-call off</span>, (d) => (d.postCall && d.workingDay ? <ResidentName id={d.postCall} short /> : null))}
-            {row(<RotationChip name="Vacation" />, (d) => names(d.residents.filter((r) => r.status === 'vacation').map((r) => r.residentId)))}
-            {row(
+            {isAdmin && row(<span className="text-slate-600">Post-call off</span>, (d) => (d.postCall && d.workingDay ? <ResidentName id={d.postCall} short /> : null))}
+            {isAdmin && row(<RotationChip name="Vacation" />, (d) => names(d.residents.filter((r) => r.status === 'vacation').map((r) => r.residentId)))}
+            {isAdmin && row(
               <span className="text-slate-600">Covering</span>,
               (d) => (
                 <div className="space-y-0.5 text-[11px] text-slate-600">
@@ -94,7 +94,7 @@ export function WeekPage() {
         </table>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        Residents on external rotations are not shown. Weekends and holidays are shaded. Click a date for full details and phone numbers.
+        Weekends and holidays are shaded. Click a date for phone numbers.
       </p>
     </div>
   );

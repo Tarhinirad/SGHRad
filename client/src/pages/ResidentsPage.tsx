@@ -24,9 +24,11 @@ export function ResidentsPage() {
     <div>
       <PageHeader title="Residents">
         <input className="input w-40" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
-        <label className="flex items-center gap-1 text-sm">
-          <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show inactive
-        </label>
+        {isAdmin && (
+          <label className="flex items-center gap-1 text-sm">
+            <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show inactive
+          </label>
+        )}
         {isAdmin && (
           <button className="btn btn-primary" onClick={() => setEditing({ r: { id: nextId(), name: '', phone: '', year: 'PGY-1', active: true }, isNew: true })}>
             + Add resident
@@ -48,13 +50,18 @@ export function ResidentsPage() {
                 return (
                   <li key={r.id} className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 ${r.active ? '' : 'opacity-50'}`}>
                     <div className="min-w-[10rem] flex-1">
-                      <Link to={`/residents/${r.id}`} className="font-medium hover:underline">
-                        {r.name}
-                      </Link>
-                      <span className="ml-2 text-xs text-slate-400">{r.id}</span>
+                      {isAdmin ? (
+                        <Link to={`/residents/${r.id}`} className="font-medium hover:underline">
+                          {r.name}
+                        </Link>
+                      ) : (
+                        <span className="font-medium">{r.name}</span>
+                      )}
+                      {isAdmin && <span className="ml-2 text-xs text-slate-400">{r.id}</span>}
                       {!r.active && <span className="ml-2 rounded bg-slate-200 px-1 text-[10px]">inactive</span>}
                     </div>
                     <PhoneLink phone={r.phone} className="text-sm" />
+                    {isAdmin && (
                     <div className="w-40 text-xs">
                       {d?.status === 'vacation' ? (
                         <RotationChip name="Vacation" small />
@@ -65,6 +72,7 @@ export function ResidentsPage() {
                       )}
                       {d?.onCall && <span className="ml-1 rounded bg-brand-100 px-1 text-[10px] font-semibold text-brand-800">on call</span>}
                     </div>
+                    )}
                     {isAdmin && (
                       <div className="flex gap-1">
                         <button className="btn btn-sm" onClick={() => setEditing({ r, isNew: false })}>

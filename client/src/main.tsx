@@ -65,22 +65,34 @@ function App() {
   return (
     <DataProvider role={me.role} name={me.name}>
       <Layout onLogout={logout} onLogin={() => setShowLogin(true)} guest={!!me.guest}>
-        <Routes>
-          <Route path="/" element={<DayPage />} />
-          <Route path="/day/:date" element={<DayPage />} />
-          <Route path="/week" element={<WeekPage />} />
-          <Route path="/week/:date" element={<WeekPage />} />
-          <Route path="/year" element={<YearPage />} />
-          <Route path="/calls" element={<CallsPage />} />
-          <Route path="/vacations" element={<VacationsPage />} />
-          <Route path="/residents" element={<ResidentsPage />} />
-          <Route path="/residents/:id" element={<ResidentPage />} />
-          <Route path="/warnings" element={<WarningsPage />} />
-          <Route path="/import" element={<ImportExportPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/audit" element={<AuditPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+        {me.role === 'admin' ? (
+          <Routes>
+            <Route path="/" element={<DayPage />} />
+            <Route path="/day/:date" element={<DayPage />} />
+            <Route path="/week" element={<WeekPage />} />
+            <Route path="/week/:date" element={<WeekPage />} />
+            <Route path="/year" element={<YearPage />} />
+            <Route path="/calls" element={<CallsPage />} />
+            <Route path="/vacations" element={<VacationsPage />} />
+            <Route path="/residents" element={<ResidentsPage />} />
+            <Route path="/residents/:id" element={<ResidentPage />} />
+            <Route path="/warnings" element={<WarningsPage />} />
+            <Route path="/import" element={<ImportExportPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/audit" element={<AuditPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        ) : (
+          // View mode: on call, daily and weekly schedule, resident directory.
+          <Routes>
+            <Route path="/" element={<DayPage />} />
+            <Route path="/day/:date" element={<DayPage />} />
+            <Route path="/week" element={<WeekPage />} />
+            <Route path="/week/:date" element={<WeekPage />} />
+            <Route path="/residents" element={<ResidentsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        )}
       </Layout>
     </DataProvider>
   );
