@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   PGY_YEARS,
+  normalizeMonthly,
+  splitParts,
   ScheduleEngine,
   academicYearMonths,
   academicYearStartFor,
@@ -191,8 +193,12 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
       const residentId = str(req.body?.residentId, 'residentId');
       const month = str(req.body?.month, 'month');
       if (!/^\d{4}-\d{2}$/.test(month)) throw bad('month must be YYYY-MM');
-      const value = str(req.body?.value, 'value', { optional: true });
-      if (value && !repo.getRotations(db).some((r) => r.name === value)) throw bad(`Unknown rotation "${value}"`);
+      // "Body/IR" = split month (first half / second half).
+      const value = normalizeMonthly(str(req.body?.value, 'value', { optional: true }));
+      const parts = splitParts(value);
+      if (parts.length > 2) throw bad('A month can be split into at most two rotations');
+      const names = new Set(repo.getRotations(db).map((r) => r.name));
+      for (const p of parts) if (!names.has(p)) throw bad(`Unknown rotation "${p}"`);
       const before = repo.getMonthly(db)[residentId]?.[month] ?? '';
       repo.setMonthly(db, residentId, month, value || null);
       repo.audit(db, user(req), 'update', 'monthly', { residentId, month, before, after: value });
@@ -359,6 +365,11 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
         const m = Number(b.academicYearStartMonth);
         if (!(m >= 1 && m <= 12)) throw bad('academicYearStartMonth must be 1-12');
         next.academicYearStartMonth = m;
+      }
+      if (b.splitDay !== undefined) {
+        const d = Number(b.splitDay);
+        if (!(Number.isInteger(d) && d >= 1 && d <= 27)) throw bad('splitDay must be 1-27');
+        next.splitDay = d;
       }
       if (b.maxPerRotation !== undefined) {
         const m = Number(b.maxPerRotation);

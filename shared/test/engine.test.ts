@@ -456,3 +456,51 @@ describe('month validation', () => {
   });
 });
 
+
+describe('split months ("Body/IR")', () => {
+  // A: Body first half, IR second half; F: IR first half, Body second half → each rotation stays covered.
+  const split = () => makeData({ monthly: { A: 'Body/IR', F: 'IR/Body' } });
+
+  it('uses the first rotation up to the split day and the second after it', () => {
+    const e = new ScheduleEngine(split());
+    const d15 = e.day('2026-09-15');
+    const d16 = e.day('2026-09-16');
+    expect(who(d15, 'A')).toMatchObject({ assignment: 'Body', monthly: 'Body' });
+    expect(who(d16, 'A')).toMatchObject({ assignment: 'IR', monthly: 'IR' });
+    expect(d15.rotations['Body']).toEqual(['A']);
+    expect(d15.rotations['IR']).toEqual(['F']);
+    expect(d16.rotations['Body']).toEqual(['F']);
+    expect(d16.rotations['IR']).toEqual(['A']);
+    expect(codes(d15)).not.toContain('rotation-empty');
+    expect(codes(d16)).not.toContain('rotation-empty');
+  });
+
+  it('flags an uncovered half', () => {
+    const d = makeData({ monthly: { A: 'Body/IR' } }); // IR has F all month; Body is empty in the second half
+    const e = new ScheduleEngine(d);
+    expect(codes(e.day('2026-09-15'))).not.toContain('rotation-empty');
+    expect(e.day('2026-09-16').issues.find((i) => i.code === 'rotation-empty')?.rotation).toBe('Body');
+  });
+
+  it('respects a custom split day', () => {
+    const d = split();
+    d.settings.splitDay = 10;
+    expect(who(computeDay(d, '2026-09-11'), 'A').assignment).toBe('IR');
+  });
+
+  it('Vacation Cover takes over the half that applies that day', () => {
+    const d = split();
+    d.vacations.push({ residentId: 'A', start: '2026-09-14', end: '2026-09-18' });
+    const e = new ScheduleEngine(d);
+    expect(who(e.day('2026-09-15'), 'VC')).toMatchObject({ assignment: 'Body', coveringFor: 'A' });
+    expect(who(e.day('2026-09-16'), 'VC')).toMatchObject({ assignment: 'IR', coveringFor: 'A' });
+  });
+
+  it('checks Vacation Cover / Post-Call per half and validates each part', () => {
+    const d = makeData({ monthly: { VC: 'Vacation Cover/Body', PC: 'Chest/Post-Call', A: 'Body/Cardiac' } });
+    const issues = new ScheduleEngine(d).monthIssues(MONTH);
+    expect(issues.find((i) => i.code === 'no-vacation-cover')?.message).toMatch(/days 16–end/);
+    expect(issues.find((i) => i.code === 'no-post-call')?.message).toMatch(/days 1–15/);
+    expect(issues.some((i) => i.code === 'unknown-rotation' && i.rotation === 'Cardiac')).toBe(true);
+  });
+});

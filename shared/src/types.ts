@@ -55,6 +55,8 @@ export interface Settings {
   externalEligibleForCalls: boolean;
   /** If false, the same resident on call two days in a row raises a warning. */
   allowConsecutiveCalls: boolean;
+  /** Split months ("Body/IR"): the first rotation runs from day 1 to this day, the second from the next day to month end. */
+  splitDay: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -67,9 +69,37 @@ export const DEFAULT_SETTINGS: Settings = {
   postCallAfterNonWorkingDay: true,
   externalEligibleForCalls: true,
   allowConsecutiveCalls: false,
+  splitDay: 15,
 };
 
 export const VACATION_COVER = 'Vacation Cover';
+
+/** Separator for a split month in the Monthly Schedule, e.g. "Body/IR" = first half Body, second half IR. */
+export const SPLIT_SEPARATOR = '/';
+
+/** "Body / IR" -> ["Body", "IR"]; "Body" -> ["Body"]. */
+export function splitParts(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(SPLIT_SEPARATOR)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/** Canonical form of a monthly value: parts trimmed and joined by "/", identical halves collapsed. */
+export function normalizeMonthly(value: string | null | undefined): string {
+  const parts = splitParts(value);
+  if (parts.length === 2 && parts[0] === parts[1]) return parts[0];
+  return parts.join(SPLIT_SEPARATOR);
+}
+
+/** The rotation that applies on a given date (1-based day of month) for a possibly split monthly value. */
+export function monthlyOnDay(value: string | null | undefined, dayOfMonth: number, splitDay: number): string | null {
+  const parts = splitParts(value);
+  if (parts.length === 0) return null;
+  if (parts.length === 1) return parts[0];
+  return dayOfMonth <= splitDay ? parts[0] : parts[parts.length - 1];
+}
 export const POST_CALL = 'Post-Call';
 
 export const DEFAULT_ROTATIONS: Rotation[] = [

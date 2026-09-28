@@ -1,6 +1,6 @@
 import { useEffect, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { addMonths, formatDateShort, monthLabel, type Issue, type MonthKey } from '@shared';
+import { addMonths, formatDateShort, monthLabel, splitParts, type Issue, type MonthKey } from '@shared';
 import { useStore } from '../store';
 
 const PALETTE = [
@@ -36,8 +36,20 @@ export function rotationClass(name: string | null | undefined, kind?: string): s
 }
 
 export function RotationChip({ name, small }: { name: string | null; small?: boolean }) {
-  const { rotByName } = useStore();
+  const { rotByName, data } = useStore();
   if (!name) return <span className="text-slate-400">—</span>;
+  const parts = splitParts(name);
+  if (parts.length > 1) {
+    // Split month: first half / second half.
+    const d = data.settings.splitDay;
+    return (
+      <span className="inline-flex items-center gap-0.5" title={`Days 1–${d}: ${parts[0]} · days ${d + 1}–end: ${parts[1]}`}>
+        <RotationChip name={parts[0]} small={small} />
+        <span className="text-[10px] text-slate-400">/</span>
+        <RotationChip name={parts[1]} small={small} />
+      </span>
+    );
+  }
   const kind = rotByName.get(name)?.kind;
   return (
     <span className={`inline-block whitespace-nowrap rounded border ${small ? 'px-1 text-[11px]' : 'px-1.5 py-0.5 text-xs'} font-medium ${rotationClass(name, kind)}`}>

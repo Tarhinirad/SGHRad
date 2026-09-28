@@ -51,6 +51,14 @@ export function sampleMonthly(yearStart: string) {
       out[r.id][m] = slot;
     });
   });
+  // Example split months: in the 4th month two residents swap Body and IR halfway through.
+  const m = months[3];
+  const body = SAMPLE_RESIDENTS.find((r) => out[r.id][m] === 'Body');
+  const ir = SAMPLE_RESIDENTS.find((r) => out[r.id][m] === 'IR');
+  if (body && ir) {
+    out[body.id][m] = 'Body/IR';
+    out[ir.id][m] = 'IR/Body';
+  }
   return out;
 }
 

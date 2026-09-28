@@ -49,6 +49,7 @@ Import and export use exactly this structure. See `templates/SGUMC_Radiology_Sch
 | Daily Calls | Date, On-Call ResidentID, On-Call Name (one row per calendar day) |
 
 - The **ResidentID** links the sheets together. If a name doesn't match its ID, you get a warning and the ID is used.
+- **Split months:** write two rotations separated by `/`, for example `Body/IR`. The resident does the first rotation from day 1 to day 15 and the second from day 16 to the end of the month (the split day can be changed in Settings). Give the other resident the opposite, `IR/Body`, so both rotations stay staffed. Each half is validated separately, and empty or over-capacity rotations are flagged day by day. In the year grid, click **½** next to a cell to split it.
 - Monthly values must be rotation names (Body, Chest, MSK, Neuro, US, IR, Body MRI, Nuclear, Vacation Cover, Post-Call, Vascular, Elective, plus any added in Settings). Differences in capitalisation are corrected automatically. Unknown values are errors, unless you tick *"Add unknown rotation names as new external rotations"*.
 - Dates can be real Excel dates, `YYYY-MM-DD` or `DD/MM/YYYY`. Month headers can be text (`Jul 2026`, `2026-07`) or Excel dates.
 - **Import → Preview & validate** lists every error and warning, with sheet and row, before anything is saved. Files with errors cannot be imported.

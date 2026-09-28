@@ -69,6 +69,21 @@ function RulesCard() {
               onBlur={(e) => Number(e.target.value) !== s.maxPerRotation && void save({ maxPerRotation: Number(e.target.value) })}
             />
           </div>
+          <div className="col-span-2">
+            <label className="label">Split months (e.g. “Body/IR”): first rotation until day</label>
+            <input
+              type="number"
+              min={1}
+              max={27}
+              className="input w-24"
+              disabled={!isAdmin}
+              defaultValue={s.splitDay}
+              onBlur={(e) => Number(e.target.value) !== s.splitDay && void save({ splitDay: Number(e.target.value) })}
+            />
+            <span className="text-xs text-slate-500">
+              Days 1–{s.splitDay} = first rotation, day {s.splitDay + 1} to month end = second rotation.
+            </span>
+          </div>
           <div>
             <label className="label">Vacation Cover default</label>
             <select className="input" disabled={!isAdmin} value={s.vacationCoverDefault} onChange={(e) => void save({ vacationCoverDefault: e.target.value })}>

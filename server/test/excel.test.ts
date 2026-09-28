@@ -181,6 +181,22 @@ describe('import validation', () => {
     expect(r2.messages.some((x) => x.severity === 'error' && x.message.includes('Unknown ResidentID'))).toBe(true);
   });
 
+  it('imports split months ("Body/IR") and validates each half', async () => {
+    const { db, buf } = await workbookWith((wb) => {
+      const m = wb.getWorksheet(SHEETS.monthly)!;
+      m.getCell('C2').value = 'body / ir';
+      m.getCell('D2').value = 'Body/Cardiac';
+      m.getCell('E2').value = 'Body/IR/US';
+    });
+    const r = await parseWorkbook(buf, opts(db));
+    const first = Object.values(r.data.monthly)[0];
+    expect(first['2026-07']).toBe('Body/IR');
+    const errs = r.messages.filter((x) => x.severity === 'error').map((x) => x.message).join('\n');
+    expect(errs).toMatch(/unknown rotation "Cardiac"/);
+    expect(errs).toMatch(/at most two rotations/);
+    expect(errs).not.toMatch(/Jul 2026/);
+  });
+
   it('reports a non-xlsx file', async () => {
     const r = await parseWorkbook(Buffer.from('hello'), { rotations: DEFAULT_ROTATIONS, existingResidents: [], mode: 'replace' });
     expect(r.messages[0].severity).toBe('error');

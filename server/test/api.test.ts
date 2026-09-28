@@ -91,6 +91,19 @@ describe('API', () => {
     expect(log.entries.some((e: any) => e.entity === 'monthly' && e.details.after === 'IR')).toBe(true);
   });
 
+  it('accepts split months and renames inside them', async () => {
+    const put = (value: string) => call('/api/monthly', { method: 'PUT', token: admin, json: { residentId: 'R02', month: '2026-11', value } });
+    expect((await put('Chest / MSK')).status).toBe(200);
+    expect((await put('Chest/Nope')).status).toBe(400);
+    expect((await put('Chest/MSK/US')).status).toBe(400);
+    let data = (await call('/api/data', { token: admin })).body;
+    expect(data.monthly['R02']['2026-11']).toBe('Chest/MSK');
+    await call('/api/rotations/MSK', { method: 'PUT', token: admin, json: { name: 'Musculoskeletal' } });
+    data = (await call('/api/data', { token: admin })).body;
+    expect(data.monthly['R02']['2026-11']).toBe('Chest/Musculoskeletal');
+    await call('/api/rotations/Musculoskeletal', { method: 'PUT', token: admin, json: { name: 'MSK' } });
+  });
+
   it('renames a rotation everywhere and protects special roles', async () => {
     const r = await call('/api/rotations/Nuclear', { method: 'PUT', token: admin, json: { name: 'Nuclear Medicine' } });
     expect(r.status).toBe(200);

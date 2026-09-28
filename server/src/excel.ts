@@ -8,6 +8,9 @@
 import ExcelJS from 'exceljs';
 import {
   PGY_YEARS,
+  SPLIT_SEPARATOR,
+  normalizeMonthly,
+  splitParts,
   academicYearMonths,
   daysInRange,
   firstOfMonth,
@@ -320,22 +323,28 @@ export async function parseWorkbook(buffer: Buffer | ArrayBuffer, opts: ParseOpt
       seen.add(id);
       if (!checkResident(SHEETS.monthly, n, id, name)) return;
       for (const { col, month } of cols) {
-        let v = cellText(row.getCell(col).value);
-        if (!v) continue;
-        if (!rotNames.has(v)) {
-          const fixed = rotLower.get(v.toLowerCase());
-          if (fixed) v = fixed;
-          else {
-            unknownRotations.add(v);
-            messages.push({
-              severity: opts.addUnknownRotations ? 'warning' : 'error',
-              sheet: SHEETS.monthly,
-              row: n,
-              message: `${id} ${monthLabel(month)}: unknown rotation "${v}"${opts.addUnknownRotations ? ' – will be added as an external rotation.' : '.'}`,
-            });
-          }
+        const raw = cellText(row.getCell(col).value);
+        if (!raw) continue;
+        // "Body/IR" = split month: first half Body, second half IR.
+        const parts = splitParts(raw);
+        if (parts.length > 2) {
+          messages.push({ severity: 'error', sheet: SHEETS.monthly, row: n, message: `${id} ${monthLabel(month)}: "${raw}" – a month can be split into at most two rotations (e.g. "Body/IR").` });
+          continue;
         }
-        (data.monthly[id] ??= {})[month] = v;
+        const fixedParts = parts.map((p) => {
+          if (rotNames.has(p)) return p;
+          const fixed = rotLower.get(p.toLowerCase());
+          if (fixed) return fixed;
+          unknownRotations.add(p);
+          messages.push({
+            severity: opts.addUnknownRotations ? 'warning' : 'error',
+            sheet: SHEETS.monthly,
+            row: n,
+            message: `${id} ${monthLabel(month)}: unknown rotation "${p}"${opts.addUnknownRotations ? ' – will be added as an external rotation.' : '.'}`,
+          });
+          return p;
+        });
+        (data.monthly[id] ??= {})[month] = normalizeMonthly(fixedParts.join(SPLIT_SEPARATOR));
       }
     });
   }

@@ -23,6 +23,8 @@
 import { addDays, daysInRange, lastOfMonth, firstOfMonth, monthOf, weekday, type ISODate, type MonthKey } from './dates';
 import {
   POST_CALL,
+  monthlyOnDay,
+  splitParts,
   VACATION_COVER,
   type DaySchedule,
   type Issue,
@@ -93,7 +95,8 @@ export class ScheduleEngine {
     // --- Base: monthly assignment -------------------------------------------------------
     for (const r of this.data.residents) {
       if (!r.active) continue;
-      const monthly = this.data.monthly[r.id]?.[month] || null;
+      // Split months ("Body/IR"): first half the first rotation, second half the second.
+      const monthly = monthlyOnDay(this.data.monthly[r.id]?.[month], Number(date.slice(8, 10)), s.splitDay);
       const kind = this.kindOf(monthly);
       const d: ResidentDay = { residentId: r.id, monthly, status: 'working', assignment: null, onCall: r.id === onCall };
       if (!monthly) d.status = 'unassigned';
@@ -360,19 +363,33 @@ export class ScheduleEngine {
   monthIssues(month: MonthKey): Issue[] {
     const out: Issue[] = [];
     const active = this.data.residents.filter((r) => r.active);
+    const split = this.data.settings.splitDay;
     const values = active.map((r) => ({ r, v: this.data.monthly[r.id]?.[month] || '' }));
-    if (!values.some((x) => x.v === VACATION_COVER)) {
-      out.push({ severity: 'warning', code: 'no-vacation-cover', month, message: `No Vacation Cover resident assigned.` });
-    }
-    if (!values.some((x) => x.v === POST_CALL)) {
-      out.push({ severity: 'warning', code: 'no-post-call', month, message: `No Post-Call resident assigned.` });
+    const anySplit = values.some((x) => splitParts(x.v).length > 1);
+    // With split months, check each half separately.
+    const halves = anySplit
+      ? [
+          { day: 1, label: ` (days 1–${split})` },
+          { day: split + 1, label: ` (days ${split + 1}–end)` },
+        ]
+      : [{ day: 1, label: '' }];
+    for (const h of halves) {
+      const on = values.map((x) => monthlyOnDay(x.v, h.day, split));
+      if (!on.includes(VACATION_COVER))
+        out.push({ severity: 'warning', code: 'no-vacation-cover', month, message: `No Vacation Cover resident assigned${h.label}.` });
+      if (!on.includes(POST_CALL)) out.push({ severity: 'warning', code: 'no-post-call', month, message: `No Post-Call resident assigned${h.label}.` });
     }
     for (const { r, v } of values) {
-      if (!v) {
+      const parts = splitParts(v);
+      if (parts.length === 0) {
         out.push({ severity: 'warning', code: 'unassigned', month, message: `${r.name} has no assignment.`, residentIds: [r.id] });
-      } else if (!this.rotByName.has(v)) {
-        out.push({ severity: 'error', code: 'unknown-rotation', month, message: `${r.name}: unknown rotation "${v}".`, residentIds: [r.id], rotation: v });
+        continue;
       }
+      if (parts.length > 2)
+        out.push({ severity: 'error', code: 'unknown-rotation', month, message: `${r.name}: "${v}" – a month can be split into at most two rotations.`, residentIds: [r.id], rotation: v });
+      for (const p of parts)
+        if (!this.rotByName.has(p))
+          out.push({ severity: 'error', code: 'unknown-rotation', month, message: `${r.name}: unknown rotation "${p}".`, residentIds: [r.id], rotation: p });
     }
     return out;
   }
