@@ -71,10 +71,11 @@ CREATE TABLE IF NOT EXISTS audit (
 CREATE INDEX IF NOT EXISTS idx_vac_res ON vacations(resident_id);
 `;
 
-export function openDb(file = process.env.DB_FILE ?? path.resolve('data/sghrad.db')): DB {
-  if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true });
-  const db = new Database(file);
-  db.pragma('journal_mode = WAL');
+/** Open the SQLite database from a file path, ':memory:', or a serialized snapshot (Buffer). */
+export function openDb(source: string | Buffer = process.env.DB_FILE ?? path.resolve('data/sghrad.db')): DB {
+  if (typeof source === 'string' && source !== ':memory:') fs.mkdirSync(path.dirname(source), { recursive: true });
+  const db = new Database(source);
+  if (typeof source === 'string' && source !== ':memory:') db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
   const count = db.prepare('SELECT COUNT(*) AS n FROM rotations').get() as { n: number };
   if (count.n === 0) replaceRotations(db, DEFAULT_ROTATIONS);

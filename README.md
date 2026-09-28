@@ -120,17 +120,30 @@ These are defaults you can change in **Settings**, with no code changes needed:
 
 ## Deployment
 
-### Public link in a few clicks (Render)
+### Free public link (Render + Neon)
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/tarhinirad/sghrad)
+This setup costs nothing. The app runs on Render's free plan, and the data is kept in a free Neon Postgres database.
+The app works on an in-memory SQLite database. It loads the latest copy from Postgres at startup and saves a new copy a second or two after every change, so edits survive restarts and redeploys.
 
-1. Click the button and sign in to Render with GitHub (allow it to access the `tarhinirad/sghrad` repo).
-2. Enter an **ADMIN_PASSWORD** and a **VIEWER_PASSWORD** when prompted, then click **Apply**.
-3. After about 3 minutes the app is live at `https://sgumc-radiology-schedule.onrender.com` (or similar). Share that link with residents along with the viewer password.
+1. **Create the free database.** Sign up at [neon.tech](https://neon.tech) (no card needed) and create a project.
+   Copy the **connection string**, which looks like `postgresql://user:pass@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require`.
+2. **Create the web service.** In Render, go to **New → Web Service**, connect the `Tarhinirad/SGHRad` repo, and fill in:
+   - Branch: the branch holding this code
+   - Runtime: **Node**
+   - Build command: `npm ci && npm run build`
+   - Start command: `npm start`
+   - Instance type: **Free**
+   - Environment variables: `ADMIN_PASSWORD`, `VIEWER_PASSWORD`, `NODE_VERSION` = `22`, `DATABASE_URL` = the Neon connection string
+   
+   You can also use the [Deploy to Render button](https://render.com/deploy?repo=https://github.com/tarhinirad/sghrad), which reads `render.yaml` and asks for the same values.
+3. After about 3–5 minutes the link appears at the top of the Render page (for example `https://sgumc-radiology-schedule.onrender.com`).
 
-`render.yaml` uses the *Starter* plan (about $7/month) with a 1 GB disk, so the database survives restarts and redeploys.
-To try it for free, change `plan: starter` to `plan: free` and delete the `disk:` block. On the free plan, **edits are lost whenever the service restarts**, and the service sleeps after 15 minutes without visitors.
-Every push to the branch redeploys automatically.
+Free-plan limits:
+- The service sleeps after 15 minutes without visitors, and the next visit takes about 30–60 seconds to wake it. To avoid this, set up a free uptime monitor (for example UptimeRobot) that requests `https://<your-app>.onrender.com/api/health` every 10 minutes. One always-on service fits within Render's 750 free hours per month.
+- Edits made in the last second or two before a crash could be lost. Normal restarts and redeploys save first.
+- Download an Excel export from time to time as a backup.
+
+Paid alternative: Render *Starter* with a persistent disk. Mount it at `/var/data`, set `DB_FILE=/var/data/sghrad.db`, and leave `DATABASE_URL` unset.
 
 ### Docker (Railway, Fly.io, any VPS)
 

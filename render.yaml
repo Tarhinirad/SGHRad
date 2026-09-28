@@ -1,23 +1,16 @@
 # One-click deploy on Render: https://render.com/deploy?repo=https://github.com/tarhinirad/sghrad
+# Free setup: Render free web service + free Neon Postgres (DATABASE_URL) to keep the data.
 services:
   - type: web
     name: sgumc-radiology-schedule
     runtime: node
-    # "starter" is needed for the persistent disk that keeps the SQLite database.
-    # On "free" there is no disk: data resets on every deploy/restart.
-    plan: starter
+    plan: free
     buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
-    disk:
-      name: data
-      mountPath: /var/data
-      sizeGB: 1
     envVars:
       - key: NODE_VERSION
         value: "22"
-      - key: DB_FILE
-        value: /var/data/sghrad.db
       - key: TZ_NAME
         value: Asia/Beirut
       - key: SESSION_SECRET
@@ -26,5 +19,6 @@ services:
         sync: false
       - key: VIEWER_PASSWORD
         sync: false
-      - key: SEED_ON_EMPTY
-        value: "true"
+      # Postgres connection string from neon.tech (free). Without it, data resets on every restart.
+      - key: DATABASE_URL
+        sync: false

@@ -56,10 +56,15 @@ export function today(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
 
-export function createApp(db: DB) {
+export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
   const app = express();
   const cfg = authConfig(db);
   app.use(express.json({ limit: '5mb' }));
+  // Tell the persistence layer (if any) after every successful write request.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' && opts.onChange) res.on('finish', () => res.statusCode < 400 && opts.onChange!());
+    next();
+  });
 
   const user = (req: Request) => req.session?.name ?? 'unknown';
   const engine = () => new ScheduleEngine(repo.loadScheduleData(db));
