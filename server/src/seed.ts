@@ -54,17 +54,22 @@ export function sampleMonthly(yearStart: string) {
   return out;
 }
 
-export function sampleVacations(yearStart: string): Vacation[] {
+export function sampleVacations(yearStart: string, monthly = sampleMonthly(yearStart)): Vacation[] {
   const months = academicYearMonths(yearStart);
   const out: Vacation[] = [];
-  // Each resident: one ~2-week block, spread over the year (Mon–Fri x2, plus weekends).
+  const used = new Set<string>();
+  const plain = (id: string, m: string) => ![VACATION_COVER, POST_CALL, 'Vascular', 'Elective'].includes(monthly[id][m]);
+  // Each resident: one ~2-week block in a month where they are on a normal department rotation,
+  // at most one long vacation per month so a single Vacation Cover can handle it.
   SAMPLE_RESIDENTS.forEach((r, i) => {
-    const m = months[(i * 5) % 12];
-    const startDay = 3 + ((i * 7) % 14);
-    const start = `${m}-${String(startDay).padStart(2, '0')}`;
+    let mi = (i * 5) % 12;
+    for (let n = 0; n < 12 && (used.has(months[mi]) || !plain(r.id, months[mi])); n++) mi = (mi + 1) % 12;
+    if (used.size < 12) used.add(months[mi]);
+    const m = months[mi];
+    const start = `${m}-${String(3 + ((i * 7) % 14)).padStart(2, '0')}`;
     out.push({ residentId: r.id, start, end: addDays(start, 11), notes: i % 3 === 0 ? 'Annual leave' : '' });
   });
-  // A few short extra leaves, some overlapping to demonstrate cover conflicts.
+  // A few short extra leaves, two of them overlapping to demonstrate a cover conflict.
   out.push({ residentId: 'R05', start: `${months[3]}-12`, end: `${months[3]}-14`, notes: 'Conference' });
   out.push({ residentId: 'R09', start: `${months[3]}-13`, end: `${months[3]}-15`, notes: 'Personal' });
   out.push({ residentId: 'R12', start: `${months[2]}-20`, end: `${months[2]}-21`, notes: 'Exam' });
@@ -111,7 +116,7 @@ export function sampleHolidays(yearStart: string): string[] {
 export function seedDatabase(db: DB, today = new Date().toISOString().slice(0, 10)) {
   const yearStart = academicYearStartFor(today, DEFAULT_SETTINGS.academicYearStartMonth);
   const monthly = sampleMonthly(yearStart);
-  const vacations = sampleVacations(yearStart);
+  const vacations = sampleVacations(yearStart, monthly);
   const calls = sampleCalls(yearStart, monthly, vacations);
   db.transaction(() => {
     clearScheduleData(db, true);

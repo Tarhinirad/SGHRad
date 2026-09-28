@@ -1,0 +1,87 @@
+import { StrictMode, useEffect, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { api, getToken, setToken } from './api';
+import { Layout } from './components/Layout';
+import './index.css';
+import { AuditPage } from './pages/AuditPage';
+import { CallsPage } from './pages/CallsPage';
+import { DayPage } from './pages/DayPage';
+import { ImportExportPage } from './pages/ImportExportPage';
+import { LoginPage } from './pages/LoginPage';
+import { ResidentPage } from './pages/ResidentPage';
+import { ResidentsPage } from './pages/ResidentsPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { VacationsPage } from './pages/VacationsPage';
+import { WarningsPage } from './pages/WarningsPage';
+import { WeekPage } from './pages/WeekPage';
+import { YearPage } from './pages/YearPage';
+import { DataProvider } from './store';
+
+interface Me {
+  role: 'admin' | 'viewer';
+  name: string;
+}
+
+function App() {
+  const [me, setMe] = useState<Me | null>(null);
+  const [checking, setChecking] = useState(!!getToken());
+
+  useEffect(() => {
+    if (getToken())
+      api<Me>('/api/me')
+        .then(setMe)
+        .catch(() => setMe(null))
+        .finally(() => setChecking(false));
+    const onExpired = () => setMe(null);
+    window.addEventListener('auth-expired', onExpired);
+    return () => window.removeEventListener('auth-expired', onExpired);
+  }, []);
+
+  if (checking) return <div className="p-8 text-center text-slate-500">Loading…</div>;
+  if (!me)
+    return (
+      <LoginPage
+        onLogin={(token, role, name) => {
+          setToken(token);
+          setMe({ role, name });
+        }}
+      />
+    );
+
+  const logout = () => {
+    setToken(null);
+    setMe(null);
+  };
+
+  return (
+    <DataProvider role={me.role} name={me.name}>
+      <Layout onLogout={logout}>
+        <Routes>
+          <Route path="/" element={<DayPage />} />
+          <Route path="/day/:date" element={<DayPage />} />
+          <Route path="/week" element={<WeekPage />} />
+          <Route path="/week/:date" element={<WeekPage />} />
+          <Route path="/year" element={<YearPage />} />
+          <Route path="/calls" element={<CallsPage />} />
+          <Route path="/vacations" element={<VacationsPage />} />
+          <Route path="/residents" element={<ResidentsPage />} />
+          <Route path="/residents/:id" element={<ResidentPage />} />
+          <Route path="/warnings" element={<WarningsPage />} />
+          <Route path="/import" element={<ImportExportPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/audit" element={<AuditPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Layout>
+    </DataProvider>
+  );
+}
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </StrictMode>,
+);

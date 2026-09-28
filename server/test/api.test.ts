@@ -16,7 +16,7 @@ async function call(path: string, init: RequestInit & { token?: string; json?: u
   if (init.json !== undefined) headers['Content-Type'] = 'application/json';
   const res = await fetch(base + path, { ...init, headers, body: init.json !== undefined ? JSON.stringify(init.json) : init.body });
   const ct = res.headers.get('content-type') ?? '';
-  return { status: res.status, body: ct.includes('json') ? await res.json() : await res.arrayBuffer() };
+  return { status: res.status, body: (ct.includes('json') ? await res.json() : await res.arrayBuffer()) as any };
 }
 
 beforeAll(async () => {

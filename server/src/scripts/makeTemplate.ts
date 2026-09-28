@@ -14,7 +14,7 @@ const arg = process.argv[2];
 const yearStart = arg && /^\d{4}$/.test(arg) ? `${arg}-07` : academicYearStartFor(new Date().toISOString().slice(0, 10), DEFAULT_SETTINGS.academicYearStartMonth);
 
 const monthly = sampleMonthly(yearStart);
-const vacations = sampleVacations(yearStart);
+const vacations = sampleVacations(yearStart, monthly);
 const sample: ScheduleData = {
   residents: SAMPLE_RESIDENTS,
   rotations: DEFAULT_ROTATIONS,

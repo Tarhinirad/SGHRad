@@ -127,8 +127,10 @@ export function createApp(db: DB) {
     '/api/export',
     wrap(async (req, res) => {
       const { yearStart, months } = yearRange(req.query.year);
-      const wb = await buildWorkbook(repo.loadScheduleData(db), yearStart);
-      const name = `SGUMC_Radiology_Schedule_${months[0].slice(0, 4)}-${months[11].slice(0, 4)}.xlsx`;
+      const blank = req.query.blank === '1';
+      const data = repo.loadScheduleData(db);
+      const wb = await buildWorkbook(blank ? { ...data, residents: [], monthly: {}, vacations: [], calls: {} } : data, yearStart);
+      const name = `SGUMC_Radiology_${blank ? 'Template' : 'Schedule'}_${months[0].slice(0, 4)}-${months[11].slice(0, 4)}.xlsx`;
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${name}"`);
       const buf = await wb.xlsx.writeBuffer();
