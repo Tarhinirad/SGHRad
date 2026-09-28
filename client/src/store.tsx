@@ -14,6 +14,7 @@ import { api } from './api';
 
 export interface AppData extends ScheduleData {
   today: string;
+  timeZone?: string;
 }
 
 interface Store {

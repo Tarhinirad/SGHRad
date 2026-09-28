@@ -70,6 +70,22 @@ function RulesCard() {
             />
           </div>
           <div className="col-span-2">
+            <label className="label">Call shift starts at (hour, hospital time)</label>
+            <input
+              type="number"
+              min={0}
+              max={23}
+              className="input w-24"
+              disabled={!isAdmin}
+              defaultValue={s.callStartHour}
+              onBlur={(e) => Number(e.target.value) !== s.callStartHour && void save({ callStartHour: Number(e.target.value) })}
+            />
+            <span className="text-xs text-muted">
+              A call on a given date runs from {String(s.callStartHour).padStart(2, '0')}:00 that day until {String(s.callStartHour).padStart(2, '0')}:00 the next day;
+              before that hour the previous day's resident is shown as on call.
+            </span>
+          </div>
+          <div className="col-span-2">
             <label className="label">Split months (e.g. “Body/IR”): first rotation until day</label>
             <input
               type="number"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ScheduleEngine, computeDay } from '../src/engine';
+import { ScheduleEngine, computeDay, onCallAt } from '../src/engine';
 import type { DaySchedule } from '../src/types';
 import { MON, MONTH, NEXT_MON, SAT, SUN, TUE, WED, makeData, res } from './fixtures';
 
@@ -502,5 +502,20 @@ describe('split months ("Body/IR")', () => {
     expect(issues.find((i) => i.code === 'no-vacation-cover')?.message).toMatch(/days 16–end/);
     expect(issues.find((i) => i.code === 'no-post-call')?.message).toMatch(/days 1–15/);
     expect(issues.some((i) => i.code === 'unknown-rotation' && i.rotation === 'Cardiac')).toBe(true);
+  });
+});
+
+describe('call shift handover (onCallAt)', () => {
+  const calls = { '2026-09-07': 'A', '2026-09-08': 'B', '2026-09-09': 'C' };
+  it('before the start hour the previous day’s resident is still on call', () => {
+    expect(onCallAt(calls, '2026-09-08', 7, 8)).toEqual({ current: 'A', currentSince: '2026-09-07', next: 'B', nextFrom: '2026-09-08' });
+  });
+  it('from the start hour the day’s own resident is on call', () => {
+    expect(onCallAt(calls, '2026-09-08', 8, 8)).toEqual({ current: 'B', currentSince: '2026-09-08', next: 'C', nextFrom: '2026-09-09' });
+    expect(onCallAt(calls, '2026-09-08', 23, 8).current).toBe('B');
+  });
+  it('handles missing entries and a custom hour', () => {
+    expect(onCallAt(calls, '2026-09-07', 5, 8)).toMatchObject({ current: null, next: 'A' });
+    expect(onCallAt(calls, '2026-09-08', 6, 6).current).toBe('B');
   });
 });

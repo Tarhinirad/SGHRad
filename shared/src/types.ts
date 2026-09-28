@@ -57,6 +57,8 @@ export interface Settings {
   allowConsecutiveCalls: boolean;
   /** Split months ("Body/IR"): the first rotation runs from day 1 to this day, the second from the next day to month end. */
   splitDay: number;
+  /** Hour (0-23, hospital time) at which a call shift starts; the Daily Calls entry for date D covers D at this hour until D+1 at this hour. */
+  callStartHour: number;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -70,6 +72,7 @@ export const DEFAULT_SETTINGS: Settings = {
   externalEligibleForCalls: true,
   allowConsecutiveCalls: false,
   splitDay: 15,
+  callStartHour: 8,
 };
 
 export const VACATION_COVER = 'Vacation Cover';

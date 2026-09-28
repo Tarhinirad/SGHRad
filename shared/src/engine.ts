@@ -407,6 +407,21 @@ export class ScheduleEngine {
   }
 }
 
+/**
+ * Who is on call at a given moment. A call listed for date D runs from D at `callStartHour`
+ * until D+1 at `callStartHour`, so before that hour the previous day's resident is still on call.
+ */
+export function onCallAt(
+  calls: Record<ISODate, string>,
+  date: ISODate,
+  hour: number,
+  callStartHour: number,
+): { current: string | null; currentSince: ISODate; next: string | null; nextFrom: ISODate } {
+  const shiftDate = hour < callStartHour ? addDays(date, -1) : date;
+  const nextDate = addDays(shiftDate, 1);
+  return { current: calls[shiftDate] ?? null, currentSince: shiftDate, next: calls[nextDate] ?? null, nextFrom: nextDate };
+}
+
 export function computeDay(data: ScheduleData, date: ISODate): DaySchedule {
   return new ScheduleEngine(data).day(date);
 }

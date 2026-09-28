@@ -78,6 +78,8 @@ For each date, the engine starts from each resident's monthly assignment and app
 5. **Manual overrides.** Per-day assignments set by the admin take priority over the computed ones.
 6. **Capacity.** Each internal rotation can have 0 to 3 residents (setting). There is a warning when a rotation is over the limit, or when it is empty on a working day. Mammography is not checked for being empty.
 
+**Call shifts** start at 08:00 hospital time (setting: *Call shift starts at*). The Daily Calls entry for a date covers that day from 08:00 until 08:00 the next day. Before 08:00, the Today page shows the previous day's resident as **on call now**, with today's resident listed as next from 08:00.
+
 Only **working days** are staffed: Monday to Friday by default, excluding listed holidays (both configurable).
 
 ### Validations (Warnings dashboard, and shown on each page)

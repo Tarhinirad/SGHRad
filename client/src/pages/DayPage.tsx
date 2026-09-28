@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { OFF, addDays, formatDateLong, isValidISO, parseISO, startOfWeek, type DaySchedule, type ResidentDay } from '@shared';
+import { OFF, addDays, formatDateLong, isValidISO, onCallAt, parseISO, startOfWeek, type DaySchedule, type ResidentDay } from '@shared';
+import { hourLabel, useClock } from '../clock';
 import { api } from '../api';
 import { BellIcon, CalendarIcon, ChevronLeft, ChevronRight, MenuIcon, PhoneIcon } from '../components/icons';
 import { IssueList, Modal, ResidentName, RotationChip, RotationDot, initials, rotationColors, telHref } from '../components/ui';
@@ -22,8 +23,21 @@ export function DayPage() {
   const external = by((r) => r.status === 'external');
   const covering = by((r) => !!r.coveringFor);
   const nextIssues = engine.issues(addDays(data.today, 1), addDays(data.today, 14)).filter((i) => i.severity !== 'info');
-  const onCall = day.onCall ? resById.get(day.onCall) : undefined;
-  const tomorrow = data.calls[addDays(date, 1)];
+  // A call listed for date D runs from D at callStartHour (08:00) to D+1 at 08:00, so on the
+  // current day, before 08:00, the previous day's resident is still the one on call.
+  const clock = useClock(data.timeZone);
+  const start = data.settings.callStartHour ?? 8;
+  const isNow = date === clock.date;
+  const shift = onCallAt(data.calls, date, isNow ? clock.hour : start, start);
+  const onCall = shift.current ? resById.get(shift.current) : undefined;
+  const tomorrow = shift.next;
+  const callLabel = isNow ? 'On call now' : 'On call';
+  const callWhen = isNow
+    ? shift.currentSince < date
+      ? `Since yesterday ${hourLabel(start)} · until ${hourLabel(start)}`
+      : `From ${hourLabel(start)} today`
+    : `From ${hourLabel(start)}`;
+  const nextLabel = shift.nextFrom === date ? `From ${hourLabel(start)} today` : `Tomorrow · from ${hourLabel(start)}`;
   const rotations = Object.entries(day.rotations);
   const staffed = new Set(rotations.flatMap(([, ids]) => ids)).size;
 
@@ -81,7 +95,8 @@ export function DayPage() {
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-call md:text-xs">
             <span className="h-2 w-2 rounded-full bg-amber-call" />
-            On call today
+            {callLabel}
+            <span className="font-semibold normal-case tracking-normal text-[#c3cde3]">· {callWhen}</span>
           </div>
           {onCall ? (
             <>
@@ -91,6 +106,8 @@ export function DayPage() {
                 {onCall.phone && <> · {onCall.phone}</>}
               </div>
             </>
+          ) : shift.current ? (
+            <div className="font-display text-2xl font-medium text-[#c3cde3] md:text-[30px]">{shift.current}</div>
           ) : (
             <div className="font-display text-2xl font-medium text-[#c3cde3] md:text-[30px]">No one assigned</div>
           )}
@@ -106,7 +123,7 @@ export function DayPage() {
         )}
         <div className="h-px bg-white/15 md:h-auto md:w-px md:self-stretch" />
         <div className="flex items-center justify-between gap-1 md:w-56 md:flex-col md:items-start">
-          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#a9b6d3] md:text-xs">Tomorrow</span>
+          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#a9b6d3] md:text-xs">Next · {nextLabel}</span>
           <span className="text-sm font-semibold md:text-[17px]">{tomorrow ? resById.get(tomorrow)?.name ?? tomorrow : '—'}</span>
         </div>
       </section>

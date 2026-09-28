@@ -52,9 +52,13 @@ const wrap =
   (req: Request, res: Response, next: NextFunction) =>
     Promise.resolve(fn(req, res)).catch(next);
 
+export function timeZone(): string {
+  return process.env.TZ_NAME ?? 'Asia/Beirut';
+}
+
 export function today(): string {
   // Date in the hospital's time zone (Beirut) so "today" flips at local midnight.
-  const tz = process.env.TZ_NAME ?? 'Asia/Beirut';
+  const tz = timeZone();
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
 }
 
@@ -103,7 +107,7 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
   );
 
   app.get('/api/data', (_req, res) => {
-    res.json({ ...repo.loadScheduleData(db), today: today() });
+    res.json({ ...repo.loadScheduleData(db), today: today(), timeZone: timeZone() });
   });
 
   app.get(
@@ -370,6 +374,11 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
         const d = Number(b.splitDay);
         if (!(Number.isInteger(d) && d >= 1 && d <= 27)) throw bad('splitDay must be 1-27');
         next.splitDay = d;
+      }
+      if (b.callStartHour !== undefined) {
+        const h = Number(b.callStartHour);
+        if (!(Number.isInteger(h) && h >= 0 && h <= 23)) throw bad('callStartHour must be 0-23');
+        next.callStartHour = h;
       }
       if (b.maxPerRotation !== undefined) {
         const m = Number(b.maxPerRotation);
