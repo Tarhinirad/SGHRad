@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { addDays, formatDateShort, isValidISO, startOfWeek, type DaySchedule } from '@shared';
-import { PageHeader, PrintButton, ResidentName, RotationChip } from '../components/ui';
+import { Icon, PageHeader, PrintButton, ResidentName, RotationChip } from '../components/ui';
 import { useStore } from '../store';
 
 export function WeekPage() {
@@ -14,9 +14,9 @@ export function WeekPage() {
 
   const row = (label: React.ReactNode, cell: (d: DaySchedule) => React.ReactNode, cls = '') => (
     <tr className={cls}>
-      <th className="sticky left-0 z-10 bg-white text-left align-top">{label}</th>
+      <th className="sticky left-0 z-10 bg-white text-left align-top normal-case tracking-normal">{label}</th>
       {days.map((d) => (
-        <td key={d.date} className={`min-w-[7.5rem] ${d.workingDay ? '' : 'bg-slate-50'} ${d.date === data.today ? 'bg-brand-50' : ''}`}>
+        <td key={d.date} className={`min-w-[7.5rem] ${d.date === data.today ? 'bg-brand-50' : d.workingDay ? '' : 'bg-slate-50/70'}`}>
           {cell(d)}
         </td>
       ))}
@@ -38,13 +38,13 @@ export function WeekPage() {
 
   return (
     <div>
-      <PageHeader title={`Week of ${formatDateShort(start)}`}>
+      <PageHeader eyebrow="Weekly schedule" title={`Week of ${formatDateShort(start)}`}>
         <button className="btn" onClick={() => go(addDays(start, -7))}>
-          ‹ Prev
+          <Icon name="left" /> Prev
         </button>
         <input type="date" className="input w-auto" value={start} onChange={(e) => e.target.value && go(e.target.value)} />
         <button className="btn" onClick={() => go(addDays(start, 7))}>
-          Next ›
+          Next <Icon name="right" />
         </button>
         <button className="btn" onClick={() => go(data.today)}>
           This week
@@ -57,7 +57,7 @@ export function WeekPage() {
             <tr>
               <th className="sticky left-0 z-10 bg-slate-50">Rotation</th>
               {days.map((d) => (
-                <th key={d.date} className={d.workingDay ? '' : 'text-slate-400'}>
+                <th key={d.date} className={`${d.workingDay ? '' : 'text-slate-400'} ${d.date === data.today ? 'bg-brand-100 text-brand-800' : ''}`}>
                   <Link to={`/day/${d.date}`} className="hover:underline">
                     {formatDateShort(d.date)}
                   </Link>
@@ -69,9 +69,9 @@ export function WeekPage() {
           </thead>
           <tbody>
             {row(
-              <span className="font-semibold text-brand-800">On call</span>,
+              <span className="inline-flex items-center gap-1.5 font-bold text-brand-800"><span className="h-2 w-2 rounded-full bg-oncall" />On call</span>,
               (d) => (d.onCall ? <ResidentName id={d.onCall} short /> : <span className="text-slate-300">—</span>),
-              'bg-brand-50/40',
+              'bg-amber-50/40',
             )}
             {rotations.map((rot) => row(<RotationChip name={rot} />, (d) => (d.workingDay ? names(d.rotations[rot] ?? []) : null)))}
             {isAdmin && row(<span className="text-slate-600">Post-call off</span>, (d) => (d.postCall && d.workingDay ? <ResidentName id={d.postCall} short /> : null))}
@@ -93,7 +93,7 @@ export function WeekPage() {
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-3 text-xs text-slate-500">
         Weekends and holidays are shaded. Click a date for phone numbers.
       </p>
     </div>

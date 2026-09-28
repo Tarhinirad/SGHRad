@@ -1,35 +1,43 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #eff6ff;
-  --color-brand-100: #dbeafe;
-  --color-brand-600: #2563eb;
-  --color-brand-700: #1d4ed8;
-  --color-brand-800: #1e40af;
-  --color-brand-900: #1e3a8a;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, ui-serif, serif;
+
+  --color-brand-50: #f0f3fa;
+  --color-brand-100: #e3e9f7;
+  --color-brand-600: #2b4f9c;
+  --color-brand-700: #1d3a78;
+  --color-brand-800: #182f61;
+  --color-brand-900: #13254b;
+  --color-brand-950: #0e1a33;
+
+  --color-oncall: #f2b233;
+  --color-canvas: #f3f4f7;
 }
 
 html { -webkit-text-size-adjust: 100%; }
-body { @apply bg-slate-50 text-slate-900 antialiased; }
+body { @apply bg-canvas font-sans text-brand-950 antialiased; font-feature-settings: "tnum" 1; }
 
 @layer components {
-  .btn { @apply inline-flex items-center justify-center gap-1 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed; }
-  .btn-primary { @apply border-brand-700 bg-brand-700 text-white hover:bg-brand-800; }
-  .btn-danger { @apply border-red-600 bg-white text-red-700 hover:bg-red-50; }
-  .btn-sm { @apply px-2 py-1 text-xs; }
-  .input { @apply block w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm shadow-sm focus:border-brand-600 focus:outline-none focus:ring-1 focus:ring-brand-600; }
-  .label { @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500; }
-  .card { @apply rounded-lg border border-slate-200 bg-white shadow-sm; }
-  .card-title { @apply border-b border-slate-100 px-4 py-2 text-sm font-semibold text-slate-700; }
+  .btn { @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-brand-950 shadow-[0_1px_2px_rgba(14,26,51,0.05)] transition-colors hover:border-slate-300 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 disabled:cursor-not-allowed disabled:opacity-50; }
+  .btn-primary { @apply border-brand-800 bg-brand-800 text-white hover:border-brand-900 hover:bg-brand-900; }
+  .btn-danger { @apply border-red-200 bg-white text-red-700 hover:border-red-300 hover:bg-red-50; }
+  .btn-sm { @apply min-h-0 rounded-lg px-2.5 py-1 text-xs; }
+  .input { @apply block min-h-10 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm shadow-[0_1px_2px_rgba(14,26,51,0.05)] focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-600/20; }
+  .label { @apply mb-1 block text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500; }
+  .card { @apply rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(14,26,51,0.04)]; }
+  .card-title { @apply border-b border-slate-100 px-5 py-3 text-sm font-bold text-brand-950; }
   .table { @apply w-full border-collapse text-sm; }
-  .table th { @apply border-b border-slate-200 bg-slate-50 px-2 py-1.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500; }
-  .table td { @apply border-b border-slate-100 px-2 py-1.5 align-top; }
+  .table th { @apply border-b border-slate-200 bg-slate-50/80 px-3 py-2.5 text-left text-[11px] font-bold uppercase tracking-[0.08em] text-slate-500; }
+  .table td { @apply border-b border-slate-100 px-3 py-2 align-top; }
+  .table tbody tr:last-child td, .table tbody tr:last-child th { @apply border-b-0; }
 }
 
 @media print {
   @page { size: landscape; margin: 10mm; }
   body { @apply bg-white text-[10pt]; }
-  .card { @apply border-slate-400 shadow-none; }
+  .card { @apply rounded-md border-slate-400 shadow-none; }
   .no-print { display: none !important; }
   .print-full { overflow: visible !important; max-width: none !important; }
   a { color: inherit; text-decoration: none; }

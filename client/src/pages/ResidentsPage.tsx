@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PGY_YEARS, type Resident } from '@shared';
 import { api } from '../api';
-import { Modal, PageHeader, PhoneLink, RotationChip } from '../components/ui';
+import { Avatar, Modal, PageHeader, PhoneLink, RotationChip } from '../components/ui';
 import { useStore } from '../store';
 
 export function ResidentsPage() {
@@ -22,8 +22,8 @@ export function ResidentsPage() {
 
   return (
     <div>
-      <PageHeader title="Residents">
-        <input className="input w-40" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <PageHeader eyebrow="Directory" title="Residents">
+        <input className="input w-48" type="search" aria-label="Search residents" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
         {isAdmin && (
           <label className="flex items-center gap-1 text-sm">
             <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> Show inactive
@@ -40,15 +40,16 @@ export function ResidentsPage() {
         const rs = list.filter((r) => r.year === year);
         if (!rs.length) return null;
         return (
-          <div key={year} className="card mb-4">
-            <div className="card-title">
-              {year} <span className="font-normal text-slate-400">({rs.length})</span>
+          <div key={year} className="card mb-5">
+            <div className="card-title flex items-center gap-2">
+              {year} <span className="rounded-full bg-slate-100 px-2 py-px text-xs font-semibold text-slate-500">{rs.length}</span>
             </div>
             <ul className="divide-y divide-slate-100">
               {rs.map((r) => {
                 const d = today.residents.find((x) => x.residentId === r.id);
                 return (
-                  <li key={r.id} className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 ${r.active ? '' : 'opacity-50'}`}>
+                  <li key={r.id} className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-3 ${r.active ? '' : 'opacity-50'}`}>
+                    <Avatar name={r.name} size="sm" />
                     <div className="min-w-[10rem] flex-1">
                       {isAdmin ? (
                         <Link to={`/residents/${r.id}`} className="font-medium hover:underline">

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { api } from '../api';
+import { Icon } from '../components/ui';
 
 export function LoginPage({ onLogin, onCancel }: { onLogin: (token: string, role: 'admin' | 'viewer', name: string) => void; onCancel?: () => void }) {
   const [password, setPassword] = useState('');
@@ -22,11 +23,13 @@ export function LoginPage({ onLogin, onCancel }: { onLogin: (token: string, role
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-900 p-4">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-xl bg-white p-6 shadow-xl">
+    <div className="flex min-h-screen items-center justify-center bg-brand-900 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.08),transparent_60%)] p-4">
+      <form onSubmit={submit} className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl">
         <div className="mb-5 text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-lg bg-brand-900 text-lg font-bold text-white">Rx</div>
-          <h1 className="text-lg font-bold">SGUMC Radiology</h1>
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-900 text-white">
+            <Icon name="logo" className="h-8 w-8" />
+          </div>
+          <h1 className="font-display text-2xl font-semibold tracking-tight">SGUMC Radiology</h1>
           <p className="text-sm text-slate-500">Resident schedule</p>
         </div>
         <label className="label" htmlFor="pw">
@@ -38,7 +41,7 @@ export function LoginPage({ onLogin, onCancel }: { onLogin: (token: string, role
         </label>
         <input id="nm" className="input mb-4" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Dr. Chief Resident" />
         {error && <p className="mb-3 text-sm text-red-700">{error}</p>}
-        <button className="btn btn-primary w-full py-2" disabled={busy}>
+        <button className="btn btn-primary min-h-11 w-full" disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
         {onCancel ? (

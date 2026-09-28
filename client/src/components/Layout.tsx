@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useStore } from '../store';
+import { Icon } from './ui';
 
 const NAV = [
   { to: '/', label: 'Today', end: true, public: true },
@@ -29,45 +30,62 @@ export function Layout({ children, onLogout, onLogin, guest }: { children: React
       end={n.end}
       onClick={() => setOpen(false)}
       className={({ isActive }) =>
-        `block rounded-md px-3 py-2 text-sm font-medium lg:py-1.5 ${isActive ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`
+        `flex items-center rounded-lg px-3.5 py-2.5 text-sm transition-colors lg:py-2 ${isActive ? 'bg-white font-semibold text-brand-900 shadow-sm' : 'font-medium text-slate-300 hover:bg-white/10 hover:text-white'}`
       }
     >
       {n.label}
-      {n.to === '/' && upcoming > 0 && <span className="ml-1 rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-amber-950">{upcoming}</span>}
+      {n.to === '/' && upcoming > 0 && <span className="ml-1.5 rounded-full bg-oncall px-1.5 text-[10px] font-bold text-amber-950">{upcoming}</span>}
     </NavLink>
   );
 
   return (
     <div className="min-h-screen">
-      <header className="no-print sticky top-0 z-40 bg-brand-900 text-white shadow">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
-          <button className="rounded p-1 text-2xl leading-none lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu">
-            ☰
+      <header className="no-print sticky top-0 z-40 bg-brand-900 text-white shadow-[0_1px_0_rgba(255,255,255,0.06),0_8px_24px_-12px_rgba(14,26,51,0.5)]">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:gap-6 lg:h-[72px]">
+          <button className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/10 lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open}>
+            <Icon name={open ? 'close' : 'menu'} className="h-5 w-5" />
           </button>
-          <div className="min-w-0 flex-1 lg:flex-none">
-            <div className="truncate text-sm font-bold">SGUMC Radiology</div>
-            <div className="truncate text-[11px] text-blue-200">Resident schedule</div>
+          <div className="flex min-w-0 flex-1 items-center gap-3 lg:flex-none">
+            <span className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 sm:flex">
+              <Icon name="logo" className="h-6 w-6" />
+            </span>
+            <div className="min-w-0">
+              <div className="truncate font-display text-[17px] font-semibold leading-tight tracking-tight">SGUMC Radiology</div>
+              <div className="truncate text-xs text-slate-300">Resident schedule</div>
+            </div>
           </div>
-          <nav className="hidden flex-1 flex-wrap gap-1 lg:flex">{links.map(link)}</nav>
+          <nav className="hidden flex-1 lg:flex">
+            <div className="flex flex-wrap gap-1 rounded-xl bg-white/[0.07] p-1">{links.map(link)}</div>
+          </nav>
           {guest ? (
-            <button className="rounded border border-white/30 px-2 py-1 text-xs hover:bg-white/10" onClick={onLogin}>
-              Admin sign in
+            <button
+              className="flex h-11 items-center gap-2 rounded-xl border border-white/20 px-3 text-sm font-semibold hover:bg-white/10 sm:px-4"
+              onClick={onLogin}
+              aria-label="Admin sign in"
+            >
+              <Icon name="lock" />
+              <span className="hidden sm:inline">Admin sign in</span>
             </button>
           ) : (
             <>
-              <div className="text-right text-[11px] leading-tight text-blue-200">
-                <div className="max-w-[9rem] truncate">{userName}</div>
-                <div>{isAdmin ? 'Admin (edit)' : 'Read-only'}</div>
+              <div className="hidden text-right text-xs leading-tight sm:block">
+                <div className="max-w-[10rem] truncate font-semibold">{userName}</div>
+                <div className="text-slate-300">{isAdmin ? 'Admin · editing' : 'Read-only'}</div>
               </div>
-              <button className="rounded border border-white/30 px-2 py-1 text-xs hover:bg-white/10" onClick={onLogout}>
-                Sign out
+              <button
+                className="flex h-11 items-center gap-2 rounded-xl border border-white/20 px-3 text-sm font-semibold hover:bg-white/10"
+                onClick={onLogout}
+                aria-label="Sign out"
+              >
+                <Icon name="logout" />
+                <span className="hidden sm:inline">Sign out</span>
               </button>
             </>
           )}
         </div>
-        {open && <nav className="border-t border-white/10 px-2 pb-3 pt-1 lg:hidden">{links.map(link)}</nav>}
+        {open && <nav className="space-y-1 border-t border-white/10 px-3 pb-4 pt-2 lg:hidden">{links.map(link)}</nav>}
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-4 sm:py-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-10">{children}</main>
     </div>
   );
 }
