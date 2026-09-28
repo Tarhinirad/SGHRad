@@ -38,7 +38,8 @@ export function DayPage() {
       : `From ${hourLabel(start)} today`
     : `From ${hourLabel(start)}`;
   const nextLabel = shift.nextFrom === date ? `From ${hourLabel(start)} today` : `Tomorrow · from ${hourLabel(start)}`;
-  const rotations = Object.entries(day.rotations);
+  // Mammography is not shown on the daily view.
+  const rotations = Object.entries(day.rotations).filter(([name]) => name !== 'Mammography');
   const staffed = new Set(rotations.flatMap(([, ids]) => ids)).size;
 
   return (
@@ -190,11 +191,6 @@ export function DayPage() {
                   <div className="flex items-center gap-2.5">
                     <RotationDot name={rot} />
                     <span className="flex-1 text-xs font-bold uppercase tracking-[0.08em] text-label md:text-[13px]">{rot}</span>
-                    {ids.length > 0 && (
-                      <span className="text-xs font-semibold text-muted">
-                        {ids.length} {ids.length === 1 ? 'resident' : 'residents'}
-                      </span>
-                    )}
                   </div>
                   {ids.length === 0 && (
                     <div className="flex flex-1 items-center text-sm text-muted md:justify-center md:rounded-xl md:border md:border-dashed md:border-[#d3d8e2] md:py-4">
