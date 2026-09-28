@@ -1,0 +1,30 @@
+# One-click deploy on Render: https://render.com/deploy?repo=https://github.com/tarhinirad/sghrad
+services:
+  - type: web
+    name: sgumc-radiology-schedule
+    runtime: node
+    # "starter" is needed for the persistent disk that keeps the SQLite database.
+    # On "free" there is no disk: data resets on every deploy/restart.
+    plan: starter
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DB_FILE
+        value: /var/data/sghrad.db
+      - key: TZ_NAME
+        value: Asia/Beirut
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: VIEWER_PASSWORD
+        sync: false
+      - key: SEED_ON_EMPTY
+        value: "true"

@@ -120,6 +120,28 @@ These are defaults you can change in **Settings**, with no code changes needed:
 
 ## Deployment
 
+### Public link in a few clicks (Render)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/tarhinirad/sghrad)
+
+1. Click the button and sign in to Render with GitHub (allow it to access the `tarhinirad/sghrad` repo).
+2. Enter an **ADMIN_PASSWORD** and a **VIEWER_PASSWORD** when prompted, then click **Apply**.
+3. After about 3 minutes the app is live at `https://sgumc-radiology-schedule.onrender.com` (or similar). Share that link with residents along with the viewer password.
+
+`render.yaml` uses the *Starter* plan (about $7/month) with a 1 GB disk, so the database survives restarts and redeploys.
+To try it for free, change `plan: starter` to `plan: free` and delete the `disk:` block. On the free plan, **edits are lost whenever the service restarts**, and the service sleeps after 15 minutes without visitors.
+Every push to the branch redeploys automatically.
+
+### Docker (Railway, Fly.io, any VPS)
+
+```bash
+docker build -t sgumc-schedule .
+docker run -d -p 80:3001 -v sgumc-data:/data \
+  -e ADMIN_PASSWORD=... -e VIEWER_PASSWORD=... sgumc-schedule
+```
+
+### Plain Node.js server
+
 On any server with Node.js 20 or later:
 
 ```bash
