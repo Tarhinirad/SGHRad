@@ -104,6 +104,23 @@ describe('API', () => {
     await call('/api/rotations/Musculoskeletal', { method: 'PUT', token: admin, json: { name: 'MSK' } });
   });
 
+  it('lets one resident cover several rotations ("Body+IR")', async () => {
+    const put = (value: string) => call('/api/monthly', { method: 'PUT', token: admin, json: { residentId: 'R03', month: '2026-11', value } });
+    expect((await put('Chest + MSK/US')).status).toBe(200);
+    expect((await put('Chest+Vacation Cover')).status).toBe(400);
+    expect((await put('Chest+Nope')).status).toBe(400);
+    const ov = (assignment: string) => call('/api/overrides/2026-11-03/R03', { method: 'PUT', token: admin, json: { assignment } });
+    expect((await ov('Body MRI + Nuclear')).status).toBe(200);
+    expect((await ov('Body/IR')).status).toBe(400);
+    let data = (await call('/api/data', { token: admin })).body;
+    expect(data.monthly['R03']['2026-11']).toBe('Chest+MSK/US');
+    expect(data.overrides['2026-11-03']['R03']).toBe('Body MRI+Nuclear');
+    await call('/api/rotations/Nuclear', { method: 'PUT', token: admin, json: { name: 'Nuc Med' } });
+    data = (await call('/api/data', { token: admin })).body;
+    expect(data.overrides['2026-11-03']['R03']).toBe('Body MRI+Nuc Med');
+    await call('/api/rotations/Nuc Med', { method: 'PUT', token: admin, json: { name: 'Nuclear' } });
+  });
+
   it('renames a rotation everywhere and protects special roles', async () => {
     const r = await call('/api/rotations/Nuclear', { method: 'PUT', token: admin, json: { name: 'Nuclear Medicine' } });
     expect(r.status).toBe(200);

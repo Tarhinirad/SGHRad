@@ -32,3 +32,13 @@ describe('dates', () => {
     expect(lastOfMonth('2027-02')).toBe('2027-02-28');
   });
 });
+
+import { normalizeMonthly, rotationNames } from '../src/types';
+describe('monthly value helpers', () => {
+  it('normalises splits and combinations', () => {
+    expect(normalizeMonthly(' Body + IR / US ')).toBe('Body+IR/US');
+    expect(normalizeMonthly('Body+Body')).toBe('Body');
+    expect(normalizeMonthly('IR/IR')).toBe('IR');
+    expect(rotationNames('Body+IR/US')).toEqual(['Body', 'IR', 'US']);
+  });
+});

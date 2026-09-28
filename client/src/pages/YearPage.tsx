@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { POST_CALL, VACATION_COVER, monthLabel, normalizeMonthly, splitParts, type MonthKey } from '@shared';
 import { api } from '../api';
-import { PageHeader, PrintButton, RotationChip, YearSelect, rotationStyle } from '../components/ui';
+import { PageHeader, PrintButton, ComboSelect, RotationChip, YearSelect } from '../components/ui';
 import { useStore } from '../store';
 
 export function YearPage() {
@@ -105,36 +105,18 @@ export function YearPage() {
 
 /** Admin cell editor: one rotation for the month, or two (split month, first half / second half). */
 function MonthCell({ value, label, onChange }: { value: string; label: string; onChange: (v: string) => void }) {
-  const { data, rotByName } = useStore();
+  const { data } = useStore();
   const parts = splitParts(value);
   const [splitting, setSplitting] = useState(false);
   const [draft, setDraft] = useState<[string, string] | null>(null);
   const isSplit = parts.length > 1 || splitting;
-  const options = data.rotations.filter((r) => r.monthly);
-
   const select = (v: string, set: (x: string) => void, aria: string, blank = '—') => (
-    <select
-      style={rotationStyle(v, rotByName.get(v)?.kind)}
-      className={`w-full min-w-[6.5rem] rounded-md border px-1 py-1 text-xs font-medium print:appearance-none ${
-        v && !rotByName.has(v) ? 'ring-2 ring-red-500' : ''
-      }`}
-      value={v}
-      onChange={(e) => set(e.target.value)}
-      aria-label={aria}
-    >
-      <option value="">{blank}</option>
-      {options.map((o) => (
-        <option key={o.name} value={o.name}>
-          {o.name}
-        </option>
-      ))}
-      {v && !rotByName.has(v) && <option value={v}>{v} (unknown)</option>}
-    </select>
+    <ComboSelect value={v} onChange={set} label={aria} blank={blank} />
   );
 
   if (!isSplit)
     return (
-      <div className="flex items-center gap-0.5">
+      <div className="flex items-start gap-0.5">
         {select(parts[0] ?? '', (x) => onChange(x), label)}
         <button
           type="button"

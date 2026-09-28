@@ -185,12 +185,14 @@ describe('import validation', () => {
     const { db, buf } = await workbookWith((wb) => {
       const m = wb.getWorksheet(SHEETS.monthly)!;
       m.getCell('C2').value = 'body / ir';
+      m.getCell('F2').value = 'body mri + nuclear';
       m.getCell('D2').value = 'Body/Cardiac';
       m.getCell('E2').value = 'Body/IR/US';
     });
     const r = await parseWorkbook(buf, opts(db));
     const first = Object.values(r.data.monthly)[0];
     expect(first['2026-07']).toBe('Body/IR');
+    expect(first['2026-10']).toBe('Body MRI+Nuclear');
     const errs = r.messages.filter((x) => x.severity === 'error').map((x) => x.message).join('\n');
     expect(errs).toMatch(/unknown rotation "Cardiac"/);
     expect(errs).toMatch(/at most two rotations/);

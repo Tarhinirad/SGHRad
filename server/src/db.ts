@@ -4,8 +4,8 @@ import path from 'node:path';
 import {
   DEFAULT_ROTATIONS,
   DEFAULT_SETTINGS,
-  SPLIT_SEPARATOR,
-  splitParts,
+  mapRotationNames,
+  rotationNames,
   type ISODate,
   type Resident,
   type Rotation,
@@ -123,11 +123,12 @@ export function replaceRotations(db: DB, rotations: Rotation[]) {
 export function renameRotation(db: DB, from: string, to: string) {
   db.prepare('UPDATE rotations SET name = ? WHERE name = ?').run(to, from);
   const upd = db.prepare('UPDATE monthly SET rotation = ? WHERE resident_id = ? AND month = ?');
-  for (const r of db.prepare('SELECT * FROM monthly').all() as any[]) {
-    const parts = splitParts(r.rotation);
-    if (parts.includes(from)) upd.run(parts.map((p) => (p === from ? to : p)).join(SPLIT_SEPARATOR), r.resident_id, r.month);
-  }
-  db.prepare('UPDATE overrides SET assignment = ? WHERE assignment = ?').run(to, from);
+  const swap = (v: string) => mapRotationNames(v, (p) => (p === from ? to : p));
+  for (const r of db.prepare('SELECT * FROM monthly').all() as any[])
+    if (rotationNames(r.rotation).includes(from)) upd.run(swap(r.rotation), r.resident_id, r.month);
+  const updO = db.prepare('UPDATE overrides SET assignment = ? WHERE date = ? AND resident_id = ?');
+  for (const o of db.prepare('SELECT * FROM overrides').all() as any[])
+    if (rotationNames(o.assignment).includes(from)) updO.run(swap(o.assignment), o.date, o.resident_id);
   const s = getSettings(db);
   let changed = false;
   if (s.vacationCoverDefault === from) {
@@ -142,9 +143,9 @@ export function renameRotation(db: DB, from: string, to: string) {
 }
 
 export function rotationUsage(db: DB, name: string): number {
-  const cells = (db.prepare('SELECT rotation FROM monthly').all() as { rotation: string }[]).filter((r) => splitParts(r.rotation).includes(name));
-  const b = db.prepare('SELECT COUNT(*) AS n FROM overrides WHERE assignment = ?').get(name) as { n: number };
-  return cells.length + b.n;
+  const cells = (db.prepare('SELECT rotation FROM monthly').all() as { rotation: string }[]).filter((r) => rotationNames(r.rotation).includes(name));
+  const days = (db.prepare('SELECT assignment FROM overrides').all() as { assignment: string }[]).filter((o) => rotationNames(o.assignment).includes(name));
+  return cells.length + days.length;
 }
 
 // ---------------------------------------------------------------- monthly

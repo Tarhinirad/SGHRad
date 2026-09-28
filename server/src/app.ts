@@ -5,6 +5,7 @@ import {
   PGY_YEARS,
   normalizeMonthly,
   splitParts,
+  comboParts,
   ScheduleEngine,
   academicYearMonths,
   academicYearStartFor,
@@ -154,6 +155,17 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
   // ------------------------------------------------------------------ admin only
   app.use('/api', (req, res, next) => (req.method === 'GET' ? next() : requireAdmin(req, res, next)));
 
+  /** Every rotation named in a value must exist; special roles cannot be combined with others. */
+  const checkRotations = (value: string) => {
+    const rots = new Map(repo.getRotations(db).map((r) => [r.name, r]));
+    for (const half of splitParts(value)) {
+      const parts = comboParts(half);
+      for (const p of parts) if (!rots.has(p)) throw bad(`Unknown rotation "${p}"`);
+      if (parts.length > 1 && parts.some((p) => rots.get(p)!.kind === 'special'))
+        throw bad('Vacation Cover and Post-Call cannot be combined with other rotations');
+    }
+  };
+
   // Residents
   const parseResident = (body: any, id?: string): Resident => {
     const year = str(body?.year, 'year');
@@ -199,10 +211,9 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
       if (!/^\d{4}-\d{2}$/.test(month)) throw bad('month must be YYYY-MM');
       // "Body/IR" = split month (first half / second half).
       const value = normalizeMonthly(str(req.body?.value, 'value', { optional: true }));
-      const parts = splitParts(value);
-      if (parts.length > 2) throw bad('A month can be split into at most two rotations');
-      const names = new Set(repo.getRotations(db).map((r) => r.name));
-      for (const p of parts) if (!names.has(p)) throw bad(`Unknown rotation "${p}"`);
+      // "Body+IR" = one resident covering both rotations.
+      if (splitParts(value).length > 2) throw bad('A month can be split into at most two rotations');
+      checkRotations(value);
       const before = repo.getMonthly(db)[residentId]?.[month] ?? '';
       repo.setMonthly(db, residentId, month, value || null);
       repo.audit(db, user(req), 'update', 'monthly', { residentId, month, before, after: value });
@@ -286,8 +297,11 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
     wrap((req, res) => {
       const d = date(req.params.date, 'date');
       const residentId = req.params.residentId;
-      const assignment = str(req.body?.assignment, 'assignment', { optional: true });
-      if (assignment && assignment !== 'Off' && !repo.getRotations(db).some((r) => r.name === assignment)) throw bad(`Unknown rotation "${assignment}"`);
+      const assignment = normalizeMonthly(str(req.body?.assignment, 'assignment', { optional: true }));
+      if (assignment && assignment !== 'Off') {
+        if (splitParts(assignment).length > 1) throw bad('A day override cannot be split');
+        checkRotations(assignment);
+      }
       repo.setOverride(db, d, residentId, assignment || null);
       repo.audit(db, user(req), 'update', 'override', { date: d, residentId, assignment });
       res.json({ ok: true });

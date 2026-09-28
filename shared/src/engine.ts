@@ -23,6 +23,7 @@
 import { addDays, daysInRange, lastOfMonth, firstOfMonth, monthOf, weekday, type ISODate, type MonthKey } from './dates';
 import {
   POST_CALL,
+  comboParts,
   monthlyOnDay,
   splitParts,
   VACATION_COVER,
@@ -67,8 +68,15 @@ export class ScheduleEngine {
     return this.vacByRes.get(residentId)?.find((v) => v.start <= date && date <= v.end);
   }
 
+  /** Kind of a rotation, or of a combination ("Body+IR"): internal if any part is internal. */
   private kindOf(rotation: string | null | undefined) {
-    return rotation ? this.rotByName.get(rotation)?.kind : undefined;
+    const kinds = comboParts(rotation).map((p) => this.rotByName.get(p)?.kind);
+    if (kinds.includes('internal')) return 'internal';
+    return kinds[0];
+  }
+
+  private orderOf(value: string | null | undefined) {
+    return Math.min(...comboParts(value).map((p) => this.rotByName.get(p)?.sortOrder ?? 999));
   }
 
   day(date: ISODate): DaySchedule {
@@ -136,8 +144,8 @@ export class ScheduleEngine {
           const va = this.vacationOn(a.residentId, date)!.start;
           const vb = this.vacationOn(b.residentId, date)!.start;
           if (va !== vb) return va < vb ? -1 : 1;
-          const oa = this.rotByName.get(a.monthly!)!.sortOrder;
-          const ob = this.rotByName.get(b.monthly!)!.sortOrder;
+          const oa = this.orderOf(a.monthly);
+          const ob = this.orderOf(b.monthly);
           if (oa !== ob) return oa - ob;
           return this.name(a.residentId).localeCompare(this.name(b.residentId));
         });
@@ -287,8 +295,12 @@ export class ScheduleEngine {
     if (workingDay) {
       for (const d of days.values()) {
         if (d.status !== 'working' || !d.assignment) continue;
-        if (this.kindOf(d.assignment) === 'external' || this.kindOf(d.assignment) === 'special') continue;
-        (rotations[d.assignment] ??= []).push(d.residentId);
+        // A resident covering several rotations ("Body+IR") appears on each of them.
+        for (const part of comboParts(d.assignment)) {
+          const k = this.rotByName.get(part)?.kind;
+          if (k === 'external' || k === 'special') continue;
+          (rotations[part] ??= []).push(d.residentId);
+        }
       }
       for (const r of internal) {
         const n = rotations[r.name].length;
@@ -387,9 +399,21 @@ export class ScheduleEngine {
       }
       if (parts.length > 2)
         out.push({ severity: 'error', code: 'unknown-rotation', month, message: `${r.name}: "${v}" – a month can be split into at most two rotations.`, residentIds: [r.id], rotation: v });
-      for (const p of parts)
-        if (!this.rotByName.has(p))
-          out.push({ severity: 'error', code: 'unknown-rotation', month, message: `${r.name}: unknown rotation "${p}".`, residentIds: [r.id], rotation: p });
+      for (const half of parts) {
+        const combo = comboParts(half);
+        for (const p of combo)
+          if (!this.rotByName.has(p))
+            out.push({ severity: 'error', code: 'unknown-rotation', month, message: `${r.name}: unknown rotation "${p}".`, residentIds: [r.id], rotation: p });
+        if (combo.length > 1 && combo.some((p) => this.rotByName.get(p)?.kind === 'special'))
+          out.push({
+            severity: 'error',
+            code: 'unknown-rotation',
+            month,
+            message: `${r.name}: "${half}" – Vacation Cover and Post-Call cannot be combined with other rotations.`,
+            residentIds: [r.id],
+            rotation: half,
+          });
+      }
     }
     return out;
   }

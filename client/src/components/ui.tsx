@@ -1,6 +1,6 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { addMonths, formatDateShort, monthLabel, splitParts, type Issue, type MonthKey } from '@shared';
+import { addMonths, comboParts, formatDateShort, monthLabel, splitParts, type Issue, type MonthKey } from '@shared';
 import { useStore } from '../store';
 import { PhoneIcon, PrintIcon } from './icons';
 
@@ -85,6 +85,20 @@ export function RotationChip({ name, small }: { name: string | null; small?: boo
         <RotationChip name={parts[0]} small={small} />
         <span className="text-[10px] text-muted">/</span>
         <RotationChip name={parts[1]} small={small} />
+      </span>
+    );
+  }
+  const combo = comboParts(name);
+  if (combo.length > 1) {
+    // One resident covering several rotations at once.
+    return (
+      <span className="inline-flex flex-wrap items-center gap-0.5" title={`Covers ${combo.join(' and ')}`}>
+        {combo.map((c, i) => (
+          <span key={c} className="inline-flex items-center gap-0.5">
+            {i > 0 && <span className="text-[10px] font-bold text-muted">+</span>}
+            <RotationChip name={c} small={small} />
+          </span>
+        ))}
       </span>
     );
   }
@@ -228,5 +242,125 @@ export function PrintButton() {
       <PrintIcon />
       Print
     </button>
+  );
+}
+
+/**
+ * Rotation picker that also allows one resident to cover several rotations at once:
+ * one select per rotation plus a "+" button to add another ("Body+IR").
+ */
+export function ComboSelect({
+  value,
+  onChange,
+  label,
+  blank = '—',
+  monthlyOnly = true,
+  noSpecial = false,
+  extraOptions = [],
+  compact = true,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+  blank?: string;
+  monthlyOnly?: boolean;
+  noSpecial?: boolean;
+  extraOptions?: { value: string; label: string }[];
+  compact?: boolean;
+}) {
+  const { data, rotByName } = useStore();
+  const [adding, setAdding] = useState(false);
+  const parts = comboParts(value);
+  const options = data.rotations.filter((r) => (!monthlyOnly || r.monthly) && !(noSpecial && r.kind === 'special'));
+  const isSpecial = (v: string) => rotByName.get(v)?.kind === 'special';
+  const combinable = options.filter((o) => o.kind !== 'special');
+  const canAdd = parts.length > 0 && !parts.some(isSpecial) && !extraOptions.some((x) => x.value === value);
+
+  const cls = compact
+    ? 'w-full min-w-[6.5rem] rounded-md border px-1 py-1 text-xs font-medium print:appearance-none'
+    : 'input';
+  const sel = (v: string, set: (x: string) => void, aria: string, opts: typeof options, first: string, extras = extraOptions) => (
+    <select
+      style={compact ? rotationStyle(v, rotByName.get(v)?.kind) : undefined}
+      className={`${cls} ${v && !rotByName.has(v) && !extras.some((x) => x.value === v) ? 'ring-2 ring-red-500' : ''}`}
+      value={v}
+      onChange={(e) => set(e.target.value)}
+      aria-label={aria}
+    >
+      <option value="">{first}</option>
+      {opts.map((o) => (
+        <option key={o.name} value={o.name}>
+          {o.name}
+        </option>
+      ))}
+      {extras.map((x) => (
+        <option key={x.value} value={x.value}>
+          {x.label}
+        </option>
+      ))}
+      {v && !rotByName.has(v) && !extras.some((x) => x.value === v) && <option value={v}>{v} (unknown)</option>}
+    </select>
+  );
+
+  const setPart = (i: number, v: string) => {
+    const next = [...parts];
+    if (v) next[i] = v;
+    else next.splice(i, 1);
+    // Special roles (Vacation Cover, Post-Call) and extra options (Off) stand alone.
+    if (v && (isSpecial(v) || extraOptions.some((x) => x.value === v))) return onChange(v);
+    onChange([...new Set(next)].join('+'));
+  };
+
+  const addBtn = canAdd && !adding && (
+    <button
+      type="button"
+      className={
+        compact
+          ? 'no-print rounded px-1 text-[12px] font-bold leading-6 text-muted hover:bg-[#eef0f4] hover:text-navy-ink'
+          : 'no-print self-start rounded px-1 text-xs font-semibold text-muted hover:bg-[#eef0f4] hover:text-navy-ink'
+      }
+      title="This resident also covers another rotation"
+      aria-label={`${label}: add another rotation`}
+      onClick={() => setAdding(true)}
+    >
+      {compact ? '+' : '+ rotation'}
+    </button>
+  );
+
+  const selects = (
+    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      {(parts.length ? parts : ['']).map((p, i) =>
+        sel(
+          p,
+          (v) => setPart(i, v),
+          i === 0 ? label : `${label} – also covers`,
+          i === 0 ? options : combinable,
+          i === 0 ? blank : 'remove',
+          i === 0 ? extraOptions : [],
+        ),
+      )}
+      {adding &&
+        sel(
+          '',
+          (v) => {
+            setAdding(false);
+            if (v) onChange([...new Set([...parts, v])].join('+'));
+          },
+          `${label} – add a rotation`,
+          combinable.filter((o) => !parts.includes(o.name)),
+          'choose…',
+          [],
+        )}
+      {!compact && addBtn}
+    </div>
+  );
+
+  return compact ? (
+    <div className="flex min-w-0 flex-1 items-start gap-0.5">
+      {selects}
+      {addBtn}
+    </div>
+  ) : (
+    selects
   );
 }

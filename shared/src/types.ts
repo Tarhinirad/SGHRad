@@ -80,6 +80,30 @@ export const VACATION_COVER = 'Vacation Cover';
 /** Separator for a split month in the Monthly Schedule, e.g. "Body/IR" = first half Body, second half IR. */
 export const SPLIT_SEPARATOR = '/';
 
+/** Joins rotations covered at the same time by one resident, e.g. "Body+IR" = Body and IR together. */
+export const COMBO_SEPARATOR = '+';
+
+/** "Body + IR" -> ["Body", "IR"]; "Body" -> ["Body"]. */
+export function comboParts(value: string | null | undefined): string[] {
+  if (!value) return [];
+  return value
+    .split(COMBO_SEPARATOR)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/** Every rotation named in a monthly value, across halves and combinations ("Body+IR/US" -> Body, IR, US). */
+export function rotationNames(value: string | null | undefined): string[] {
+  return splitParts(value).flatMap(comboParts);
+}
+
+/** Rewrite every rotation name inside a monthly value, keeping its "/" halves and "+" combinations. */
+export function mapRotationNames(value: string, fn: (name: string) => string): string {
+  return splitParts(value)
+    .map((h) => comboParts(h).map(fn).join(COMBO_SEPARATOR))
+    .join(SPLIT_SEPARATOR);
+}
+
 /** "Body / IR" -> ["Body", "IR"]; "Body" -> ["Body"]. */
 export function splitParts(value: string | null | undefined): string[] {
   if (!value) return [];
@@ -91,7 +115,8 @@ export function splitParts(value: string | null | undefined): string[] {
 
 /** Canonical form of a monthly value: parts trimmed and joined by "/", identical halves collapsed. */
 export function normalizeMonthly(value: string | null | undefined): string {
-  const parts = splitParts(value);
+  // Each half may combine rotations with "+": trim and de-duplicate them.
+  const parts = splitParts(value).map((h) => [...new Set(comboParts(h))].join(COMBO_SEPARATOR)).filter(Boolean);
   if (parts.length === 2 && parts[0] === parts[1]) return parts[0];
   return parts.join(SPLIT_SEPARATOR);
 }

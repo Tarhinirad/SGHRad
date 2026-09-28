@@ -4,7 +4,7 @@ import { OFF, addDays, formatDateLong, isValidISO, onCallAt, parseISO, startOfWe
 import { hourLabel, useClock } from '../clock';
 import { api } from '../api';
 import { BellIcon, CalendarIcon, ChevronLeft, ChevronRight, MenuIcon, PhoneIcon } from '../components/icons';
-import { IssueList, Modal, ResidentName, RotationChip, RotationDot, initials, rotationColors, telHref } from '../components/ui';
+import { ComboSelect, IssueList, Modal, ResidentName, RotationChip, RotationDot, initials, rotationColors, telHref } from '../components/ui';
 import { useStore } from '../store';
 
 const fmt = (d: string, o: Intl.DateTimeFormatOptions) => parseISO(d).toLocaleDateString('en-GB', { ...o, timeZone: 'UTC' });
@@ -350,12 +350,12 @@ function CoverChooser({ day }: { day: DaySchedule }) {
 function AdjustModal({ day, onClose }: { day: DaySchedule; onClose: () => void }) {
   const { data, mutate, resById } = useStore();
   const overrides = data.overrides[day.date] ?? {};
-  const choices = data.rotations.filter((r) => r.kind !== 'special').map((r) => r.name);
   const set = (rid: string, v: string) => mutate(() => api(`/api/overrides/${day.date}/${rid}`, { method: 'PUT', json: { assignment: v } }));
   return (
     <Modal title={`Adjust ${formatDateLong(day.date)}`} onClose={onClose}>
       <p className="mb-3 text-xs text-muted">
-        Manual overrides replace the computed assignment for this day only (e.g. to resolve a post-call or vacation conflict).
+        Manual overrides replace the computed assignment for this day only (e.g. to resolve a post-call or vacation conflict). Use “+ rotation”
+        to have one resident cover several rotations.
       </p>
       <table className="table">
         <tbody>
@@ -367,14 +367,17 @@ function AdjustModal({ day, onClose }: { day: DaySchedule; onClose: () => void }
                   {r.monthly ?? 'unassigned'} · {r.status}
                 </div>
               </td>
-              <td className="w-44">
-                <select className="input" value={overrides[r.residentId] ?? ''} onChange={(e) => void set(r.residentId, e.target.value)}>
-                  <option value="">Auto ({r.manual ? 'computed' : r.assignment ?? r.status})</option>
-                  {choices.map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                  <option value={OFF}>Off</option>
-                </select>
+              <td className="w-52">
+                <ComboSelect
+                  value={overrides[r.residentId] ?? ''}
+                  onChange={(v) => void set(r.residentId, v)}
+                  label={`${resById.get(r.residentId)?.name} on ${day.date}`}
+                  blank={`Auto (${r.manual ? 'computed' : r.assignment ?? r.status})`}
+                  monthlyOnly={false}
+                  noSpecial
+                  extraOptions={[{ value: OFF, label: 'Off' }]}
+                  compact={false}
+                />
               </td>
             </tr>
           ))}

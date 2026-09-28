@@ -519,3 +519,57 @@ describe('call shift handover (onCallAt)', () => {
     expect(onCallAt(calls, '2026-09-08', 6, 6).current).toBe('B');
   });
 });
+
+describe('one resident covering several rotations ("Body+IR")', () => {
+  it('places the resident on every rotation of the combination', () => {
+    const d = makeData({ monthly: { A: 'Body+IR', F: 'Chest' } });
+    const day = computeDay(d, TUE);
+    expect(day.rotations['Body']).toEqual(['A']);
+    expect(day.rotations['IR']).toEqual(['A']);
+    expect(who(day, 'A')).toMatchObject({ status: 'working', assignment: 'Body+IR' });
+    expect(codes(day)).not.toContain('rotation-empty');
+  });
+
+  it('counts towards each rotation’s capacity', () => {
+    const d = makeData({ monthly: { B: 'Body', C: 'Body', D: 'Body+Neuro' } });
+    expect(computeDay(d, TUE).issues.find((i) => i.code === 'rotation-over-capacity')?.rotation).toBe('Body');
+  });
+
+  it('combines with split months ("Body+IR/US")', () => {
+    const e = new ScheduleEngine(makeData({ monthly: { A: 'Body+IR/US' } }));
+    expect(e.day('2026-09-15').rotations['IR']).toContain('A');
+    expect(e.day('2026-09-16').rotations['IR']).not.toContain('A');
+    expect(e.day('2026-09-16').rotations['US']).toContain('A');
+  });
+
+  it('Vacation Cover takes over the whole combination', () => {
+    const d = makeData({ monthly: { A: 'Body+IR', F: 'Chest' } });
+    d.vacations.push({ residentId: 'A', start: TUE, end: TUE });
+    const day = computeDay(d, TUE);
+    expect(who(day, 'VC')).toMatchObject({ assignment: 'Body+IR', coveringFor: 'A' });
+    expect(day.rotations['IR']).toEqual(['VC']);
+  });
+
+  it('Post-Call takes over the whole combination', () => {
+    const d = makeData({ monthly: { A: 'Body+IR', F: 'Chest' } });
+    d.calls[MON] = 'A';
+    const day = computeDay(d, TUE);
+    expect(day.rotations['Body']).toEqual(['PC']);
+    expect(day.rotations['IR']).toEqual(['PC']);
+  });
+
+  it('a manual override can give one resident several rotations for a day', () => {
+    const d = makeData({ monthly: { H: 'Body' } }); // Nuclear empty
+    d.overrides[TUE] = { G: 'Body MRI+Nuclear' };
+    const day = computeDay(d, TUE);
+    expect(day.rotations['Nuclear']).toEqual(['G']);
+    expect(codes(day)).not.toContain('rotation-empty');
+  });
+
+  it('validates each part and rejects combining special roles', () => {
+    const d = makeData({ monthly: { A: 'Body+Cardiac', VC: 'Vacation Cover+Body' } });
+    const issues = new ScheduleEngine(d).monthIssues(MONTH);
+    expect(issues.some((i) => i.rotation === 'Cardiac')).toBe(true);
+    expect(issues.some((i) => /cannot be combined/.test(i.message))).toBe(true);
+  });
+});

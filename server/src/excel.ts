@@ -8,7 +8,7 @@
 import ExcelJS from 'exceljs';
 import {
   PGY_YEARS,
-  SPLIT_SEPARATOR,
+  mapRotationNames,
   normalizeMonthly,
   splitParts,
   academicYearMonths,
@@ -331,10 +331,11 @@ export async function parseWorkbook(buffer: Buffer | ArrayBuffer, opts: ParseOpt
           messages.push({ severity: 'error', sheet: SHEETS.monthly, row: n, message: `${id} ${monthLabel(month)}: "${raw}" – a month can be split into at most two rotations (e.g. "Body/IR").` });
           continue;
         }
-        const fixedParts = parts.map((p) => {
+        // "Body+IR" = one resident covering both rotations; every part is checked.
+        const fixed = mapRotationNames(raw, (p) => {
           if (rotNames.has(p)) return p;
-          const fixed = rotLower.get(p.toLowerCase());
-          if (fixed) return fixed;
+          const known = rotLower.get(p.toLowerCase());
+          if (known) return known;
           unknownRotations.add(p);
           messages.push({
             severity: opts.addUnknownRotations ? 'warning' : 'error',
@@ -344,7 +345,7 @@ export async function parseWorkbook(buffer: Buffer | ArrayBuffer, opts: ParseOpt
           });
           return p;
         });
-        (data.monthly[id] ??= {})[month] = normalizeMonthly(fixedParts.join(SPLIT_SEPARATOR));
+        (data.monthly[id] ??= {})[month] = normalizeMonthly(fixed);
       }
     });
   }
