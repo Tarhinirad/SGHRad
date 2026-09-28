@@ -47,7 +47,7 @@ export async function api<T = any>(path: string, opts: Opts = {}): Promise<T> {
   const isJson = (res.headers.get('content-type') ?? '').includes('json');
   const payload = isJson ? await res.json() : null;
   if (!res.ok) {
-    if (res.status === 401 && path !== '/api/login') {
+    if (res.status === 401 && path !== '/api/login' && token) {
       setToken(null);
       window.dispatchEvent(new Event('auth-expired'));
     }

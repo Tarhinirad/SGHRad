@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { api } from '../api';
 
-export function LoginPage({ onLogin }: { onLogin: (token: string, role: 'admin' | 'viewer', name: string) => void }) {
+export function LoginPage({ onLogin, onCancel }: { onLogin: (token: string, role: 'admin' | 'viewer', name: string) => void; onCancel?: () => void }) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
@@ -41,7 +41,13 @@ export function LoginPage({ onLogin }: { onLogin: (token: string, role: 'admin' 
         <button className="btn btn-primary w-full py-2" disabled={busy}>
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
-        <p className="mt-4 text-center text-xs text-slate-400">Residents use the read-only password; the admin password allows editing.</p>
+        {onCancel ? (
+          <button type="button" className="btn mt-3 w-full" onClick={onCancel}>
+            ← Back to the schedule
+          </button>
+        ) : (
+          <p className="mt-4 text-center text-xs text-slate-400">Residents use the read-only password; the admin password allows editing.</p>
+        )}
       </form>
     </div>
   );

@@ -33,10 +33,29 @@ beforeAll(async () => {
 afterAll(() => server?.close());
 
 describe('API', () => {
-  it('rejects wrong passwords and unauthenticated requests', async () => {
+  it('rejects wrong passwords', async () => {
     expect((await call('/api/login', { method: 'POST', json: { password: 'nope' } })).status).toBe(401);
-    expect((await call('/api/data')).status).toBe(401);
-    expect((await call('/api/data', { token: 'forged.token' })).status).toBe(401);
+  });
+
+  it('lets anyone view without a password, but not edit or read the audit log', async () => {
+    const me = await call('/api/me');
+    expect(me.body).toMatchObject({ role: 'viewer', guest: true, publicView: true });
+    expect((await call('/api/data')).status).toBe(200);
+    expect((await call('/api/data', { token: 'forged.token' })).status).toBe(200);
+    expect((await call('/api/calls/2026-10-01', { method: 'PUT', json: { residentId: 'R01' } })).status).toBe(403);
+    expect((await call('/api/calls/2026-10-01', { method: 'PUT', token: 'forged.token', json: { residentId: 'R01' } })).status).toBe(403);
+    expect((await call('/api/audit')).status).toBe(403);
+    expect((await call('/api/audit', { token: viewer })).status).toBe(403);
+  });
+
+  it('can require a login to view (REQUIRE_LOGIN_TO_VIEW=true)', async () => {
+    process.env.REQUIRE_LOGIN_TO_VIEW = 'true';
+    try {
+      expect((await call('/api/data')).status).toBe(401);
+      expect((await call('/api/data', { token: viewer })).status).toBe(200);
+    } finally {
+      delete process.env.REQUIRE_LOGIN_TO_VIEW;
+    }
   });
 
   it('lets viewers read but not edit', async () => {

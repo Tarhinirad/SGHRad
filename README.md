@@ -31,12 +31,11 @@ To wipe the database and re-seed, run `npm run seed` or use **Settings → Reset
 
 ## Access
 
-The site uses shared passwords (the data includes phone numbers):
+- **Viewing is public.** Anyone with the link sees the schedule, calls, vacations and resident phone numbers without a password.
+- **Editing requires the admin password** (`ADMIN_PASSWORD`). Use **Admin sign in** at the top right. The admin types their name when signing in, and that name is recorded in the audit log. The audit log is visible to admins only.
+- To require a password for viewing again, set `REQUIRE_LOGIN_TO_VIEW=true`. Residents then sign in with `VIEWER_PASSWORD`.
 
-- **Admin password** (`ADMIN_PASSWORD`, default `admin`): can edit everything. The admin types their name at login, and that name is recorded in the audit log.
-- **Viewer password** (`VIEWER_PASSWORD`, default `resident`): read-only access for residents.
-
-Logins last 30 days per device. **Change both passwords before deploying.**
+Admin logins last 30 days per device. **Set a strong `ADMIN_PASSWORD` before deploying.**
 
 ## Excel workbook format
 

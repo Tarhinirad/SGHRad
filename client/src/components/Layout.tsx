@@ -15,7 +15,7 @@ const NAV = [
   { to: '/audit', label: 'Audit log', admin: true },
 ];
 
-export function Layout({ children, onLogout }: { children: ReactNode; onLogout: () => void }) {
+export function Layout({ children, onLogout, onLogin, guest }: { children: ReactNode; onLogout: () => void; onLogin: () => void; guest: boolean }) {
   const { isAdmin, userName, engine, data } = useStore();
   const [open, setOpen] = useState(false);
   const upcoming = engine.day(data.today).issues.filter((i) => i.severity !== 'info').length;
@@ -48,13 +48,21 @@ export function Layout({ children, onLogout }: { children: ReactNode; onLogout: 
             <div className="truncate text-[11px] text-blue-200">Resident schedule</div>
           </div>
           <nav className="hidden flex-1 flex-wrap gap-1 lg:flex">{links.map(link)}</nav>
-          <div className="text-right text-[11px] leading-tight text-blue-200">
-            <div className="max-w-[9rem] truncate">{userName}</div>
-            <div>{isAdmin ? 'Admin (edit)' : 'Read-only'}</div>
-          </div>
-          <button className="rounded border border-white/30 px-2 py-1 text-xs hover:bg-white/10" onClick={onLogout}>
-            Sign out
-          </button>
+          {guest ? (
+            <button className="rounded border border-white/30 px-2 py-1 text-xs hover:bg-white/10" onClick={onLogin}>
+              Admin sign in
+            </button>
+          ) : (
+            <>
+              <div className="text-right text-[11px] leading-tight text-blue-200">
+                <div className="max-w-[9rem] truncate">{userName}</div>
+                <div>{isAdmin ? 'Admin (edit)' : 'Read-only'}</div>
+              </div>
+              <button className="rounded border border-white/30 px-2 py-1 text-xs hover:bg-white/10" onClick={onLogout}>
+                Sign out
+              </button>
+            </>
+          )}
         </div>
         {open && <nav className="border-t border-white/10 px-2 pb-3 pt-1 lg:hidden">{links.map(link)}</nav>}
       </header>

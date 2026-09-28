@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
-import { api, getToken, setToken } from './api';
+import { api, setToken } from './api';
 import { Layout } from './components/Layout';
 import './index.css';
 import { AuditPage } from './pages/AuditPage';
@@ -21,42 +21,50 @@ import { DataProvider } from './store';
 interface Me {
   role: 'admin' | 'viewer';
   name: string;
+  guest?: boolean;
+  publicView?: boolean;
 }
 
 function App() {
   const [me, setMe] = useState<Me | null>(null);
-  const [checking, setChecking] = useState(!!getToken());
+  const [checking, setChecking] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
+
+  const loadMe = () =>
+    api<Me>('/api/me')
+      .then(setMe)
+      .catch(() => setMe(null))
+      .finally(() => setChecking(false));
 
   useEffect(() => {
-    if (getToken())
-      api<Me>('/api/me')
-        .then(setMe)
-        .catch(() => setMe(null))
-        .finally(() => setChecking(false));
-    const onExpired = () => setMe(null);
+    void loadMe();
+    const onExpired = () => void loadMe();
     window.addEventListener('auth-expired', onExpired);
     return () => window.removeEventListener('auth-expired', onExpired);
   }, []);
 
   if (checking) return <div className="p-8 text-center text-slate-500">Loading…</div>;
-  if (!me)
+  if (!me || showLogin)
     return (
       <LoginPage
+        onCancel={me?.publicView ? () => setShowLogin(false) : undefined}
         onLogin={(token, role, name) => {
           setToken(token);
-          setMe({ role, name });
+          setMe({ role, name, publicView: me?.publicView });
+          setShowLogin(false);
         }}
       />
     );
 
   const logout = () => {
     setToken(null);
-    setMe(null);
+    setChecking(true);
+    void loadMe();
   };
 
   return (
     <DataProvider role={me.role} name={me.name}>
-      <Layout onLogout={logout}>
+      <Layout onLogout={logout} onLogin={() => setShowLogin(true)} guest={!!me.guest}>
         <Routes>
           <Route path="/" element={<DayPage />} />
           <Route path="/day/:date" element={<DayPage />} />

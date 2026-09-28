@@ -80,13 +80,22 @@ export function login(cfg: ReturnType<typeof authConfig>, password: string, name
   return null;
 }
 
+/**
+ * Viewing is public unless REQUIRE_LOGIN_TO_VIEW=true: requests without a valid token are treated
+ * as a read-only guest. Editing always requires the admin password.
+ */
+export function publicViewEnabled() {
+  return process.env.REQUIRE_LOGIN_TO_VIEW !== 'true';
+}
+
 export function requireAuth(secret: string) {
   return (req: Request, res: Response, next: NextFunction) => {
     const h = req.headers.authorization ?? '';
     const token = h.startsWith('Bearer ') ? h.slice(7) : typeof req.query.token === 'string' ? req.query.token : '';
     const s = token ? verifyToken(secret, token) : null;
-    if (!s) return res.status(401).json({ error: 'Not signed in' });
-    req.session = s;
+    if (s) req.session = s;
+    else if (publicViewEnabled()) req.session = { role: 'viewer', name: 'guest', exp: 0 };
+    else return res.status(401).json({ error: 'Not signed in' });
     next();
   };
 }

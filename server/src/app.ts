@@ -13,7 +13,7 @@ import {
   type Rotation,
   type Settings,
 } from '../../shared/src/index';
-import { authConfig, login, requireAdmin, requireAuth, signToken } from './auth';
+import { authConfig, login, publicViewEnabled, requireAdmin, requireAuth, signToken } from './auth';
 import * as repo from './db';
 import { buildWorkbook, parseWorkbook } from './excel';
 import { applyImport, summarizeImport, type ImportMode } from './importer';
@@ -96,7 +96,9 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
   // ------------------------------------------------------------------ authenticated
   app.use('/api', requireAuth(cfg.secret));
 
-  app.get('/api/me', (req, res) => res.json({ role: req.session!.role, name: req.session!.name, today: today() }));
+  app.get('/api/me', (req, res) =>
+    res.json({ role: req.session!.role, name: req.session!.name, guest: req.session!.name === 'guest' && req.session!.exp === 0, publicView: publicViewEnabled(), today: today() }),
+  );
 
   app.get('/api/data', (_req, res) => {
     res.json({ ...repo.loadScheduleData(db), today: today() });
@@ -122,7 +124,7 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
     }),
   );
 
-  app.get('/api/audit', (req, res) => {
+  app.get('/api/audit', requireAdmin, (req, res) => {
     const limit = Math.min(500, Number(req.query.limit) || 100);
     const offset = Math.max(0, Number(req.query.offset) || 0);
     res.json(repo.getAudit(db, limit, offset));
