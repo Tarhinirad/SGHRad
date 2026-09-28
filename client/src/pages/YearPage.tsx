@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { POST_CALL, VACATION_COVER, monthLabel, normalizeMonthly, splitParts, type MonthKey } from '@shared';
 import { api } from '../api';
-import { PageHeader, PrintButton, RotationChip, YearSelect, rotationClass } from '../components/ui';
+import { PageHeader, PrintButton, RotationChip, YearSelect, rotationStyle } from '../components/ui';
 import { useStore } from '../store';
 
 export function YearPage() {
@@ -32,7 +32,7 @@ export function YearPage() {
         <table className="table text-xs">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 bg-slate-50">Resident</th>
+              <th className="sticky left-0 z-10 bg-[#f7f8fa]">Resident</th>
               {months.map((m) => (
                 <th key={m} className={`text-center ${m === currentMonth ? 'bg-brand-100 text-brand-900' : ''}`}>
                   {monthLabel(m)}
@@ -47,7 +47,7 @@ export function YearPage() {
                   <Link to={`/residents/${r.id}`} className="font-medium hover:underline">
                     {r.name}
                   </Link>
-                  <div className="text-[10px] text-slate-500">
+                  <div className="text-[10px] text-muted">
                     {r.id} · {r.year}
                   </div>
                 </td>
@@ -73,7 +73,7 @@ export function YearPage() {
                 {months.map((m) => {
                   const n = count(m, role);
                   return (
-                    <td key={m} className={`text-center text-[11px] ${n === 0 ? 'bg-red-50 font-semibold text-red-700' : 'text-slate-500'}`}>
+                    <td key={m} className={`text-center text-[11px] ${n === 0 ? 'bg-red-50 font-semibold text-red-700' : 'text-muted'}`}>
                       {n === 0 ? 'missing' : n}
                     </td>
                   );
@@ -85,7 +85,7 @@ export function YearPage() {
               {months.map((m) => {
                 const n = engine.monthIssues(m).filter((i) => i.severity !== 'info').length;
                 return (
-                  <td key={m} className={`text-center text-[11px] ${n ? 'text-amber-700' : 'text-slate-400'}`}>
+                  <td key={m} className={`text-center text-[11px] ${n ? 'text-amber-700' : 'text-muted'}`}>
                     {n || '✓'}
                   </td>
                 );
@@ -94,7 +94,7 @@ export function YearPage() {
           </tfoot>
         </table>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-muted">
         Each cell is the resident's assignment for the month. Use ½ to split a month (e.g. Body/IR = days 1–{data.settings.splitDay} Body, then IR);
         in Excel type it as “Body/IR”. Mammography is not assigned monthly – it is where the Vacation Cover resident goes when
         nobody is on vacation.
@@ -114,7 +114,8 @@ function MonthCell({ value, label, onChange }: { value: string; label: string; o
 
   const select = (v: string, set: (x: string) => void, aria: string, blank = '—') => (
     <select
-      className={`w-full min-w-[6.5rem] rounded border px-1 py-1 text-xs print:appearance-none ${rotationClass(v, rotByName.get(v)?.kind)} ${
+      style={rotationStyle(v, rotByName.get(v)?.kind)}
+      className={`w-full min-w-[6.5rem] rounded-md border px-1 py-1 text-xs font-medium print:appearance-none ${
         v && !rotByName.has(v) ? 'ring-2 ring-red-500' : ''
       }`}
       value={v}
@@ -137,7 +138,7 @@ function MonthCell({ value, label, onChange }: { value: string; label: string; o
         {select(parts[0] ?? '', (x) => onChange(x), label)}
         <button
           type="button"
-          className="no-print rounded px-1 text-[11px] text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          className="no-print rounded px-1 text-[11px] text-muted hover:bg-[#eef0f4] hover:text-navy-ink"
           title="Split this month in two halves"
           onClick={() => setSplitting(true)}
         >
@@ -157,18 +158,18 @@ function MonthCell({ value, label, onChange }: { value: string; label: string; o
     } else setDraft([x, y]);
   };
   return (
-    <div className="space-y-0.5 rounded border border-dashed border-slate-300 p-0.5">
+    <div className="space-y-0.5 rounded border border-dashed border-line p-0.5">
       <div className="flex items-center gap-0.5">
-        <span className="w-6 text-[9px] text-slate-400">1–{data.settings.splitDay}</span>
+        <span className="w-6 text-[9px] text-muted">1–{data.settings.splitDay}</span>
         {select(a, (x) => save(x, b), `${label} first half`)}
       </div>
       <div className="flex items-center gap-0.5">
-        <span className="w-6 text-[9px] text-slate-400">{data.settings.splitDay + 1}+</span>
+        <span className="w-6 text-[9px] text-muted">{data.settings.splitDay + 1}+</span>
         {select(b, (y) => save(a, y), `${label} second half`, 'choose…')}
       </div>
       <button
         type="button"
-        className="no-print w-full text-[10px] text-slate-400 hover:text-red-600"
+        className="no-print w-full text-[10px] text-muted hover:text-red-600"
         onClick={() => {
           setSplitting(false);
           setDraft(null);

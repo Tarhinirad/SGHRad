@@ -65,13 +65,13 @@ export function WarningsPage() {
             <button
               key={c}
               onClick={() => setCode(code === c ? '' : c)}
-              className={`card flex items-center justify-between gap-2 p-3 text-left ${code === c ? 'ring-2 ring-brand-600' : 'hover:bg-slate-50'}`}
+              className={`card flex items-center justify-between gap-2 p-3 text-left ${code === c ? 'ring-2 ring-brand-600' : 'hover:bg-[#f7f8fa]'}`}
             >
               <div>
                 <div className="text-sm font-medium">{LABELS[c]}</div>
                 <SeverityBadge severity={g.severity} />
               </div>
-              <div className="text-2xl font-bold text-slate-700">{g.n}</div>
+              <div className="text-2xl font-bold text-navy-ink">{g.n}</div>
             </button>
           ))}
         {groups.size === 0 && <div className="card col-span-full p-4 text-sm text-green-700">✓ No problems found.</div>}
@@ -87,9 +87,9 @@ export function WarningsPage() {
           )}
         </div>
         <IssueList issues={shown.slice(0, 500)} showDate />
-        {shown.length > 500 && <p className="px-4 py-2 text-xs text-slate-500">Showing the first 500.</p>}
+        {shown.length > 500 && <p className="px-4 py-2 text-xs text-muted">Showing the first 500.</p>}
       </div>
-      <p className="mt-2 text-xs text-slate-500">
+      <p className="mt-2 text-xs text-muted">
         “Resolvable” warnings can be fixed for a single day from the day view: choose whom the Vacation Cover covers, or use “Adjust assignments”.
       </p>
     </div>

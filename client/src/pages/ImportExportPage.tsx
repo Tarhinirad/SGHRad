@@ -70,7 +70,7 @@ export function ImportExportPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="card p-4">
           <h2 className="mb-2 font-semibold">Export to Excel</h2>
-          <p className="mb-3 text-sm text-slate-600">
+          <p className="mb-3 text-sm text-muted">
             Downloads the current data as <b>.xlsx</b> with the sheets Residents, Monthly Schedule, Vacations and Daily Calls (one row per day of the
             academic year).
           </p>
@@ -88,7 +88,7 @@ export function ImportExportPage() {
         <div className="card p-4 lg:col-span-2">
           <h2 className="mb-2 font-semibold">Import from Excel</h2>
           {!isAdmin ? (
-            <p className="text-sm text-slate-500">Sign in with the admin password to import.</p>
+            <p className="text-sm text-muted">Sign in with the admin password to import.</p>
           ) : (
             <>
               <input
@@ -191,8 +191,8 @@ export function ImportExportPage() {
             </div>
           )}
           {preview.data.residents.length > 0 && (
-            <details className="border-t border-slate-100 px-4 py-2 text-sm">
-              <summary className="cursor-pointer text-slate-600">Residents in file ({preview.data.residents.length})</summary>
+            <details className="border-t border-line px-4 py-2 text-sm">
+              <summary className="cursor-pointer text-muted">Residents in file ({preview.data.residents.length})</summary>
               <ul className="mt-2 columns-1 text-xs sm:columns-2 lg:columns-3">
                 {preview.data.residents.map((r) => (
                   <li key={r.id}>
@@ -205,8 +205,8 @@ export function ImportExportPage() {
         </div>
       )}
 
-      <div className="card mt-4 p-4 text-sm text-slate-600">
-        <h2 className="mb-2 font-semibold text-slate-800">Workbook format</h2>
+      <div className="card mt-4 p-4 text-sm text-muted">
+        <h2 className="mb-2 font-semibold text-navy-ink">Workbook format</h2>
         <ul className="list-disc space-y-1 pl-5">
           <li>
             <b>Residents</b>: ResidentID | Name | Phone | Year (PGY-1 … PGY-4) | Active (Y/N)
@@ -229,7 +229,7 @@ export function ImportExportPage() {
 
 function Stat({ title, lines }: { title: string; lines: string[] }) {
   return (
-    <div className="rounded border border-slate-200 p-3">
+    <div className="rounded border border-line p-3">
       <div className="label">{title}</div>
       {lines.filter(Boolean).map((l) => (
         <div key={l}>{l}</div>

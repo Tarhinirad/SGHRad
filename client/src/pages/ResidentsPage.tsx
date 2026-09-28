@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PGY_YEARS, type Resident } from '@shared';
 import { api } from '../api';
-import { Modal, PageHeader, PhoneLink, RotationChip } from '../components/ui';
+import { PhoneIcon } from '../components/icons';
+import { Modal, PageHeader, RotationChip, initials, telHref } from '../components/ui';
 import { useStore } from '../store';
 
 export function ResidentsPage() {
@@ -41,32 +42,42 @@ export function ResidentsPage() {
         if (!rs.length) return null;
         return (
           <div key={year} className="card mb-4">
-            <div className="card-title">
-              {year} <span className="font-normal text-slate-400">({rs.length})</span>
+            <div className="card-title flex items-baseline gap-2">
+              {year} <span className="font-sans text-sm font-semibold text-muted">{rs.length} residents</span>
             </div>
-            <ul className="divide-y divide-slate-100">
+            <ul className="divide-y divide-line">
               {rs.map((r) => {
                 const d = today.residents.find((x) => x.residentId === r.id);
                 return (
-                  <li key={r.id} className={`flex flex-wrap items-center gap-x-4 gap-y-1 px-4 py-2.5 ${r.active ? '' : 'opacity-50'}`}>
-                    <div className="min-w-[10rem] flex-1">
-                      {isAdmin ? (
-                        <Link to={`/residents/${r.id}`} className="font-medium hover:underline">
-                          {r.name}
-                        </Link>
-                      ) : (
-                        <span className="font-medium">{r.name}</span>
+                  <li key={r.id} className={`flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 ${r.active ? '' : 'opacity-50'}`}>
+                    <div className="flex min-w-[12rem] flex-1 items-center gap-3">
+                      <span className="avatar h-10 w-10 bg-brand-100 text-sm text-brand-700">{initials(r.name)}</span>
+                      <div className="flex min-w-0 flex-col">
+                        <span className="flex flex-wrap items-center gap-2">
+                          {isAdmin ? (
+                            <Link to={`/residents/${r.id}`} className="font-semibold text-navy-ink">
+                              {r.name}
+                            </Link>
+                          ) : (
+                            <span className="font-semibold">{r.name}</span>
+                          )}
+                          {isAdmin && <span className="text-xs text-muted">{r.id}</span>}
+                          {!r.active && <span className="pill bg-[#e6e9ef] px-2 py-0 text-[10px] text-muted">inactive</span>}
+                        </span>
+                        {r.phone && <span className="text-[13px] text-muted">{r.phone}</span>}
+                      </div>
+                      {r.phone && (
+                        <a href={telHref(r.phone)} aria-label={`Call ${r.name}`} className="icon-btn ml-auto bg-brand-50 text-brand-700 hover:bg-brand-100">
+                          <PhoneIcon />
+                        </a>
                       )}
-                      {isAdmin && <span className="ml-2 text-xs text-slate-400">{r.id}</span>}
-                      {!r.active && <span className="ml-2 rounded bg-slate-200 px-1 text-[10px]">inactive</span>}
                     </div>
-                    <PhoneLink phone={r.phone} className="text-sm" />
                     {isAdmin && (
                     <div className="w-40 text-xs">
                       {d?.status === 'vacation' ? (
                         <RotationChip name="Vacation" small />
                       ) : d?.status === 'post-call' ? (
-                        <span className="text-slate-500">Post-call off</span>
+                        <span className="text-muted">Post-call off</span>
                       ) : (
                         <RotationChip name={d?.assignment ?? d?.monthly ?? null} small />
                       )}

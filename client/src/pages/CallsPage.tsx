@@ -47,7 +47,7 @@ export function CallsPage() {
       </PageHeader>
 
       <div className="card print-full overflow-hidden">
-        <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50 text-center text-[11px] font-semibold uppercase text-slate-500">
+        <div className="grid grid-cols-7 border-b border-line bg-[#f7f8fa] text-center text-[11px] font-semibold uppercase text-muted">
           {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
             <div key={d} className="py-1.5">
               {d}
@@ -66,17 +66,17 @@ export function CallsPage() {
                 key={d}
                 disabled={!inMonth || !isAdmin}
                 onClick={() => setEditing(d)}
-                className={`min-h-16 border-b border-r border-slate-100 p-1 text-left align-top sm:min-h-20 sm:p-1.5 ${
-                  inMonth ? (wk ? 'bg-slate-50' : 'bg-white') : 'bg-slate-100/60 text-slate-300'
+                className={`min-h-16 border-b border-r border-line p-1 text-left align-top sm:min-h-20 sm:p-1.5 ${
+                  inMonth ? (wk ? 'bg-[#f7f8fa]' : 'bg-white') : 'bg-[#eef0f4] text-muted'
                 } ${d === data.today ? 'ring-2 ring-inset ring-brand-600' : ''} ${isAdmin && inMonth ? 'hover:bg-brand-50' : ''}`}
                 title={problems.map((p) => p.message).join('\n')}
               >
-                <div className="flex items-center justify-between text-[11px] text-slate-500">
+                <div className="flex items-center justify-between text-[11px] text-muted">
                   <span>{Number(d.slice(8))}</span>
                   {problems.length > 0 && <span className="text-amber-600">⚠</span>}
                 </div>
                 {inMonth && (
-                  <div className={`mt-0.5 text-[11px] font-medium leading-tight sm:text-xs ${r ? 'text-slate-800' : 'text-red-400'}`}>
+                  <div className={`mt-0.5 text-[11px] font-medium leading-tight sm:text-xs ${r ? 'text-navy-ink' : 'text-red-400'}`}>
                     {r ? (
                       <>
                         <span className="sm:hidden">{r.name.split(' ').map((p) => p[0]).join('')}</span>
@@ -174,7 +174,7 @@ function CallEditor({ date, onClose, onNavigate }: { date: string; onClose: () =
           Next day ›
         </button>
       </div>
-      <ul className="divide-y divide-slate-100 rounded border border-slate-200">
+      <ul className="divide-y divide-line rounded border border-line">
         {data.residents
           .filter((r) => r.active)
           .map((r) => {
@@ -187,7 +187,7 @@ function CallEditor({ date, onClose, onNavigate }: { date: string; onClose: () =
                   onClick={() => void save(r.id)}
                 >
                   <span>
-                    {r.name} <span className="text-xs text-slate-400">{r.year}</span>
+                    {r.name} <span className="text-xs text-muted">{r.year}</span>
                   </span>
                   <span className={`text-right text-[11px] ${bad ? 'font-semibold text-red-600' : 'text-amber-700'}`}>{n.join(' · ')}</span>
                 </button>

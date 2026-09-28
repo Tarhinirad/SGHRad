@@ -67,7 +67,7 @@ export function VacationsPage() {
             <tbody>
               {list.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-slate-500">
+                  <td colSpan={7} className="text-muted">
                     No vacations.
                   </td>
                 </tr>
@@ -84,7 +84,7 @@ export function VacationsPage() {
                     <td className="text-right">{diffDays(v.start, v.end) + 1}</td>
                     <td className="text-xs">
                       {o.length === 0 ? (
-                        <span className="text-slate-400">—</span>
+                        <span className="text-muted">—</span>
                       ) : (
                         <span className="text-amber-800">
                           ⚠{' '}
@@ -97,7 +97,7 @@ export function VacationsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="text-xs text-slate-600">{v.notes}</td>
+                    <td className="text-xs text-muted">{v.notes}</td>
                     {isAdmin && (
                       <td className="no-print whitespace-nowrap text-right">
                         <button className="btn btn-sm" onClick={() => setEditing(v)}>
@@ -142,7 +142,7 @@ function VacationCalendar({ month, setMonth }: { month: string; setMonth: (m: st
             <tr>
               <th className="sticky left-0 z-10 bg-white px-2 text-left text-xs font-semibold">Resident</th>
               {days.map((d) => (
-                <th key={d} className={`w-6 min-w-6 font-normal ${weekday(d) === 0 || weekday(d) === 6 ? 'text-slate-400' : ''} ${d === data.today ? 'bg-brand-100' : ''}`}>
+                <th key={d} className={`w-6 min-w-6 font-normal ${weekday(d) === 0 || weekday(d) === 6 ? 'text-muted' : ''} ${d === data.today ? 'bg-brand-100' : ''}`}>
                   {Number(d.slice(8))}
                 </th>
               ))}
@@ -150,7 +150,7 @@ function VacationCalendar({ month, setMonth }: { month: string; setMonth: (m: st
           </thead>
           <tbody>
             {residents.map((r) => (
-              <tr key={r.id} className="border-t border-slate-100">
+              <tr key={r.id} className="border-t border-line">
                 <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-2 py-0.5 text-xs">{r.name}</td>
                 {days.map((d) => {
                   const v = engine.vacationOn(r.id, d);
@@ -158,18 +158,18 @@ function VacationCalendar({ month, setMonth }: { month: string; setMonth: (m: st
                     <td
                       key={d}
                       title={v ? `${r.name}: ${v.start} → ${v.end}${v.notes ? ` (${v.notes})` : ''}` : undefined}
-                      className={`h-5 border-l border-slate-100 ${v ? 'bg-green-500' : weekday(d) === 0 || weekday(d) === 6 ? 'bg-slate-50' : ''}`}
+                      className={`h-5 border-l border-line ${v ? 'bg-green-500' : weekday(d) === 0 || weekday(d) === 6 ? 'bg-[#f7f8fa]' : ''}`}
                     />
                   );
                 })}
               </tr>
             ))}
-            <tr className="border-t-2 border-slate-200">
+            <tr className="border-t-2 border-line">
               <td className="sticky left-0 z-10 bg-white px-2 py-0.5 text-xs font-semibold">On vacation</td>
               {days.map((d) => {
                 const n = onVac(d);
                 return (
-                  <td key={d} className={`text-center font-semibold ${n > 1 ? 'bg-amber-100 text-amber-800' : 'text-slate-400'}`}>
+                  <td key={d} className={`text-center font-semibold ${n > 1 ? 'bg-amber-100 text-amber-800' : 'text-muted'}`}>
                     {n || ''}
                   </td>
                 );
@@ -178,7 +178,7 @@ function VacationCalendar({ month, setMonth }: { month: string; setMonth: (m: st
           </tbody>
         </table>
       </div>
-      <p className="px-4 py-2 text-xs text-slate-500">Days with more than one resident away are highlighted – check the Warnings page for cover conflicts.</p>
+      <p className="px-4 py-2 text-xs text-muted">Days with more than one resident away are highlighted – check the Warnings page for cover conflicts.</p>
     </div>
   );
 }

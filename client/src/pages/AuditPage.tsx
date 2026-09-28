@@ -60,7 +60,7 @@ export function AuditPage() {
         <button className="btn" disabled={page === 0} onClick={() => setPage(page - 1)}>
           ‹ Newer
         </button>
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-muted">
           {data ? `${page * PAGE + 1}–${Math.min(data.total, (page + 1) * PAGE)} of ${data.total}` : ''}
         </span>
         <button className="btn" disabled={!data || (page + 1) * PAGE >= data.total} onClick={() => setPage(page + 1)}>
@@ -83,9 +83,9 @@ export function AuditPage() {
                 <td className="whitespace-nowrap text-xs">{new Date(e.ts).toLocaleString('en-GB')}</td>
                 <td className="whitespace-nowrap">{e.user}</td>
                 <td className="whitespace-nowrap">
-                  {e.action} <span className="text-slate-500">{e.entity}</span>
+                  {e.action} <span className="text-muted">{e.entity}</span>
                 </td>
-                <td className="text-xs text-slate-700">{summary(e)}</td>
+                <td className="text-xs text-navy-ink">{summary(e)}</td>
               </tr>
             ))}
           </tbody>

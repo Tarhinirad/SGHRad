@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useStore } from '../store';
+import { LockIcon, LogoIcon, MenuIcon } from './icons';
 
 const NAV = [
   { to: '/', label: 'Today', end: true, public: true },
@@ -22,52 +23,88 @@ export function Layout({ children, onLogout, onLogin, guest }: { children: React
 
   // View mode shows only the public pages; admins see everything.
   const links = NAV.filter((n) => isAdmin || n.public);
-  const link = (n: (typeof NAV)[number]) => (
+  // Few links (view mode) fit in the pill bar from tablet width; the admin's full menu from wide desktop.
+  const bar = 'hidden md:flex';
+  const burger = isAdmin ? 'lg:hidden' : 'md:hidden';
+  const link = (n: (typeof NAV)[number], mobile = false) => (
     <NavLink
       key={n.to}
       to={n.to}
       end={n.end}
       onClick={() => setOpen(false)}
       className={({ isActive }) =>
-        `block rounded-md px-3 py-2 text-sm font-medium lg:py-1.5 ${isActive ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`
+        `flex items-center gap-1.5 whitespace-nowrap rounded-[9px] px-4 text-sm ${mobile ? 'min-h-11' : 'py-2'} ${
+          isActive ? 'bg-white font-semibold text-navy' : 'font-medium text-[#d6deef] hover:bg-white/10 hover:text-white'
+        }`
       }
     >
       {n.label}
-      {n.to === '/' && upcoming > 0 && <span className="ml-1 rounded-full bg-amber-400 px-1.5 text-[10px] font-bold text-amber-950">{upcoming}</span>}
+      {n.to === '/' && upcoming > 0 && (
+        <span className="rounded-full bg-amber-call px-1.5 text-[10px] font-bold text-[#1c1405]" title="Warnings today">
+          {upcoming}
+        </span>
+      )}
     </NavLink>
   );
 
   return (
     <div className="min-h-screen">
-      <header className="no-print sticky top-0 z-40 bg-brand-900 text-white shadow">
-        <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-2">
-          <button className="rounded p-1 text-2xl leading-none lg:hidden" onClick={() => setOpen(!open)} aria-label="Menu">
-            ☰
+      <header className="no-print sticky top-0 z-40 bg-navy text-white">
+        <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 md:h-[72px] md:gap-6">
+          <button className={`icon-btn bg-white/10 ${burger}`} onClick={() => setOpen(!open)} aria-label="Menu" aria-expanded={open}>
+            <MenuIcon />
           </button>
-          <div className="min-w-0 flex-1 lg:flex-none">
-            <div className="truncate text-sm font-bold">SGUMC Radiology</div>
-            <div className="truncate text-[11px] text-blue-200">Resident schedule</div>
-          </div>
-          <nav className="hidden flex-1 flex-wrap gap-1 lg:flex">{links.map(link)}</nav>
+          <NavLink to="/" className="flex min-w-0 flex-1 items-center gap-3 text-white hover:no-underline md:flex-none">
+            <span className="hidden h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] bg-white/10 sm:flex">
+              <LogoIcon />
+            </span>
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate font-display text-[17px] font-semibold tracking-[-0.01em] md:text-lg">SGUMC Radiology</span>
+              <span className="truncate text-[11px] text-[#a9b6d3] md:text-xs">Resident schedule</span>
+            </span>
+          </NavLink>
+          {!isAdmin && (
+            <nav aria-label="Main" className={`${bar} min-w-0 gap-1 rounded-xl bg-white/[0.07] p-1`}>
+              {links.map((n) => link(n))}
+            </nav>
+          )}
+          <div className="hidden flex-1 md:block" />
           {guest ? (
-            <button className="rounded border border-white/30 px-2 py-1 text-xs hover:bg-white/10" onClick={onLogin}>
-              Admin sign in
+            <button
+              className="flex h-11 shrink-0 items-center gap-2 rounded-[10px] border border-white/25 px-3 text-[13px] font-semibold hover:bg-white/10 sm:px-4"
+              onClick={onLogin}
+              aria-label="Admin sign in"
+            >
+              <LockIcon />
+              <span className="hidden sm:inline">Admin sign in</span>
             </button>
           ) : (
-            <>
-              <div className="text-right text-[11px] leading-tight text-blue-200">
-                <div className="max-w-[9rem] truncate">{userName}</div>
-                <div>{isAdmin ? 'Admin (edit)' : 'Read-only'}</div>
+            <div className="flex shrink-0 items-center gap-3">
+              <div className="hidden text-right text-[11px] leading-tight text-[#a9b6d3] sm:block">
+                <div className="max-w-[9rem] truncate font-semibold text-white">{userName}</div>
+                <div>{isAdmin ? 'Admin · can edit' : 'Read-only'}</div>
               </div>
-              <button className="rounded border border-white/30 px-2 py-1 text-xs hover:bg-white/10" onClick={onLogout}>
+              <button className="h-10 rounded-[10px] border border-white/25 px-3 text-[13px] font-semibold hover:bg-white/10" onClick={onLogout}>
                 Sign out
               </button>
-            </>
+            </div>
           )}
         </div>
-        {open && <nav className="border-t border-white/10 px-2 pb-3 pt-1 lg:hidden">{links.map(link)}</nav>}
+        {isAdmin && (
+          // The admin menu is long: it gets its own row under the header on desktop.
+          <div className="hidden border-t border-white/10 lg:block">
+            <nav aria-label="Admin" className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-4 py-2">
+              {links.map((n) => link(n))}
+            </nav>
+          </div>
+        )}
+        {open && (
+          <nav aria-label="Main" className={`${burger} flex flex-col gap-1 border-t border-white/10 px-3 pb-3 pt-2`}>
+            {links.map((n) => link(n, true))}
+          </nav>
+        )}
       </header>
-      <main className="mx-auto max-w-7xl px-4 py-4 sm:py-6">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 sm:py-8 lg:py-10">{children}</main>
     </div>
   );
 }

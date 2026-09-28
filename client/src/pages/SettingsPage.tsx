@@ -17,7 +17,7 @@ export function SettingsPage() {
   return (
     <div>
       <PageHeader title="Settings" />
-      {!isAdmin && <p className="mb-4 rounded bg-slate-100 px-3 py-2 text-sm text-slate-600">Read-only – sign in as admin to change settings.</p>}
+      {!isAdmin && <p className="mb-4 rounded bg-[#eef0f4] px-3 py-2 text-sm text-muted">Read-only – sign in as admin to change settings.</p>}
       <div className="grid gap-4 lg:grid-cols-2">
         <RulesCard />
         <HolidaysCard />
@@ -38,7 +38,7 @@ function RulesCard() {
       <input type="checkbox" className="mt-1" disabled={!isAdmin} checked={s[k] as boolean} onChange={(e) => void save({ [k]: e.target.checked })} />
       <span>
         {label}
-        <span className="block text-xs text-slate-500">{help}</span>
+        <span className="block text-xs text-muted">{help}</span>
       </span>
     </label>
   );
@@ -80,7 +80,7 @@ function RulesCard() {
               defaultValue={s.splitDay}
               onBlur={(e) => Number(e.target.value) !== s.splitDay && void save({ splitDay: Number(e.target.value) })}
             />
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-muted">
               Days 1–{s.splitDay} = first rotation, day {s.splitDay + 1} to month end = second rotation.
             </span>
           </div>
@@ -150,12 +150,12 @@ function HolidaysCard() {
           </div>
         )}
         <ul className="flex flex-wrap gap-2">
-          {hol.length === 0 && <li className="text-sm text-slate-500">None</li>}
+          {hol.length === 0 && <li className="text-sm text-muted">None</li>}
           {hol.map((h) => (
-            <li key={h} className="flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-sm">
+            <li key={h} className="flex items-center gap-1 rounded border border-line bg-[#f7f8fa] px-2 py-0.5 text-sm">
               {formatDateShort(h)} {h.slice(0, 4)}
               {isAdmin && (
-                <button className="text-slate-400 hover:text-red-600" onClick={() => void save(hol.filter((x) => x !== h))} aria-label="Remove">
+                <button className="text-muted hover:text-red-600" onClick={() => void save(hol.filter((x) => x !== h))} aria-label="Remove">
                   ×
                 </button>
               )}
@@ -206,7 +206,7 @@ function RotationsCard() {
                   ) : (
                     r.kind
                   )}
-                  <div className="text-[11px] text-slate-500">{KIND_HELP[r.kind]}</div>
+                  <div className="text-[11px] text-muted">{KIND_HELP[r.kind]}</div>
                 </td>
                 <td>
                   <input type="checkbox" disabled={!isAdmin || r.kind === 'special'} checked={r.monthly} onChange={(e) => void update(r.name, { monthly: e.target.checked })} />
@@ -251,7 +251,7 @@ function RotationsCard() {
         </table>
       </div>
       {isAdmin && (
-        <div className="flex flex-wrap items-end gap-2 border-t border-slate-100 p-4">
+        <div className="flex flex-wrap items-end gap-2 border-t border-line p-4">
           <div>
             <label className="label">New rotation</label>
             <input className="input" value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="e.g. Cardiac" />

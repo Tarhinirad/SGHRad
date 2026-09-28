@@ -1,13 +1,16 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { OFF, addDays, formatDateLong, isValidISO, startOfWeek, type DaySchedule, type ResidentDay } from '@shared';
+import { OFF, addDays, formatDateLong, isValidISO, parseISO, startOfWeek, type DaySchedule, type ResidentDay } from '@shared';
 import { api } from '../api';
-import { IssueList, Modal, PageHeader, PhoneLink, ResidentName, RotationChip } from '../components/ui';
+import { BellIcon, CalendarIcon, ChevronLeft, ChevronRight, MenuIcon, PhoneIcon } from '../components/icons';
+import { IssueList, Modal, ResidentName, RotationChip, RotationDot, initials, rotationColors, telHref } from '../components/ui';
 import { useStore } from '../store';
+
+const fmt = (d: string, o: Intl.DateTimeFormatOptions) => parseISO(d).toLocaleDateString('en-GB', { ...o, timeZone: 'UTC' });
 
 export function DayPage() {
   const { date: param } = useParams();
-  const { data, engine, isAdmin, resById } = useStore();
+  const { data, engine, isAdmin, resById, rotByName } = useStore();
   const navigate = useNavigate();
   const date = param && isValidISO(param) ? param : data.today;
   const day = engine.day(date);
@@ -19,216 +22,285 @@ export function DayPage() {
   const external = by((r) => r.status === 'external');
   const covering = by((r) => !!r.coveringFor);
   const nextIssues = engine.issues(addDays(data.today, 1), addDays(data.today, 14)).filter((i) => i.severity !== 'info');
+  const onCall = day.onCall ? resById.get(day.onCall) : undefined;
+  const tomorrow = data.calls[addDays(date, 1)];
+  const rotations = Object.entries(day.rotations);
+  const staffed = new Set(rotations.flatMap(([, ids]) => ids)).size;
 
   return (
-    <div>
-      <PageHeader
-        title={
-          <span>
-            {formatDateLong(date)}
-            {date === data.today && <span className="ml-2 rounded bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-800">Today</span>}
-          </span>
-        }
-      >
-        <button className="btn" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
-          ‹
-        </button>
-        <input type="date" className="input w-auto" value={date} onChange={(e) => e.target.value && go(e.target.value)} />
-        <button className="btn" onClick={() => go(addDays(date, 1))} aria-label="Next day">
-          ›
-        </button>
-        {date !== data.today && (
-          <button className="btn" onClick={() => go(data.today)}>
-            Today
-          </button>
-        )}
-        <Link className="btn" to={`/week/${startOfWeek(date)}`}>
-          Week
-        </Link>
-      </PageHeader>
+    <div className="flex flex-col gap-6 lg:gap-7">
+      {/* Title + date stepper */}
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center gap-2.5">
+            <span className="eyebrow">{fmt(date, { weekday: 'long' })}</span>
+            {date === data.today && <span className="pill">Today</span>}
+            {!day.workingDay && <span className="pill bg-[#eef0f4] text-muted">{day.holiday ? 'Holiday' : 'Weekend'}</span>}
+          </div>
+          <h1 className="m-0 text-[32px] font-semibold leading-tight md:text-[44px]">{fmt(date, { day: 'numeric', month: 'long', year: 'numeric' })}</h1>
+        </div>
+        <div className="no-print flex items-center gap-2">
+          <div className="flex flex-1 items-center rounded-xl border border-line-strong bg-white shadow-[0_1px_2px_rgba(14,26,51,0.05)] md:flex-none">
+            <button className="icon-btn text-navy-ink hover:bg-brand-50" onClick={() => go(addDays(date, -1))} aria-label="Previous day">
+              <ChevronLeft />
+            </button>
+            <label className="relative flex h-11 flex-1 cursor-pointer items-center justify-center gap-2 border-x border-[#eceff4] px-3.5 text-sm font-semibold">
+              <CalendarIcon className="text-muted" />
+              <span className="whitespace-nowrap sm:hidden">{fmt(date, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+              <span className="hidden whitespace-nowrap sm:inline">{fmt(date, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              <input
+                type="date"
+                aria-label="Pick a date"
+                className="absolute inset-0 cursor-pointer opacity-0"
+                value={date}
+                onChange={(e) => e.target.value && go(e.target.value)}
+              />
+            </label>
+            <button className="icon-btn text-navy-ink hover:bg-brand-50" onClick={() => go(addDays(date, 1))} aria-label="Next day">
+              <ChevronRight />
+            </button>
+          </div>
+          {date !== data.today && (
+            <button className="btn h-11" onClick={() => go(data.today)}>
+              Today
+            </button>
+          )}
+          <Link className="btn h-11 hover:no-underline" to={`/week/${startOfWeek(date)}`}>
+            <MenuIcon size={16} className="hidden sm:block" />
+            <span className="sm:hidden">Week</span>
+            <span className="hidden sm:inline">Week view</span>
+          </Link>
+        </div>
+      </div>
 
-      {!day.workingDay && (
-        <div className="mb-4 rounded-lg border border-slate-200 bg-slate-100 px-4 py-3 text-sm text-slate-700">
-          {day.holiday ? 'Holiday' : 'Weekend'} – rotations are not staffed. Only the on-call resident is shown.
+      {/* On call hero */}
+      <section className="flex flex-col gap-4 rounded-[18px] bg-navy p-5 text-white md:flex-row md:items-center md:gap-8 md:rounded-[20px] md:px-8 md:py-7">
+        <div className="hidden h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#f2b233]/15 text-amber-call md:flex">
+          <BellIcon />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-amber-call md:text-xs">
+            <span className="h-2 w-2 rounded-full bg-amber-call" />
+            On call today
+          </div>
+          {onCall ? (
+            <>
+              <div className="truncate font-display text-2xl font-semibold md:text-[30px]">{onCall.name}</div>
+              <div className="text-sm text-[#c3cde3]">
+                {onCall.year}
+                {onCall.phone && <> · {onCall.phone}</>}
+              </div>
+            </>
+          ) : (
+            <div className="font-display text-2xl font-medium text-[#c3cde3] md:text-[30px]">No one assigned</div>
+          )}
+        </div>
+        {onCall?.phone && (
+          <a
+            href={telHref(onCall.phone)}
+            className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-call px-5 text-[15px] font-bold text-[#1c1405] hover:bg-[#f5c04f] hover:text-[#1c1405] hover:no-underline"
+          >
+            <PhoneIcon />
+            Call
+          </a>
+        )}
+        <div className="h-px bg-white/15 md:h-auto md:w-px md:self-stretch" />
+        <div className="flex items-center justify-between gap-1 md:w-56 md:flex-col md:items-start">
+          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#a9b6d3] md:text-xs">Tomorrow</span>
+          <span className="text-sm font-semibold md:text-[17px]">{tomorrow ? resById.get(tomorrow)?.name ?? tomorrow : '—'}</span>
+        </div>
+      </section>
+
+      {/* Admin-only status cards */}
+      {isAdmin && (
+        <div className="grid gap-4 md:grid-cols-2">
+          <StatusCard title="Post-call (off)">
+            {day.postCall ? (
+              <>
+                <div className="font-semibold">
+                  <ResidentName id={day.postCall} phone />
+                </div>
+                {day.residents.find((r) => r.residentId === day.postCall)?.coveredBy && (
+                  <p className="mt-1 text-sm text-muted">
+                    Replaced by <ResidentName id={day.residents.find((r) => r.residentId === day.postCall)!.coveredBy} />
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-muted">Nobody</p>
+            )}
+          </StatusCard>
+          <StatusCard title={`On vacation (${vacation.length})`}>
+            {vacation.length === 0 && <p className="text-sm text-muted">Nobody</p>}
+            <ul className="space-y-1 text-sm">
+              {vacation.map((r) => (
+                <li key={r.residentId}>
+                  <ResidentName id={r.residentId} /> <span className="text-xs text-muted">({r.monthly})</span>
+                  {r.coveredBy && (
+                    <span className="text-xs text-muted">
+                      {' '}
+                      → covered by <ResidentName id={r.coveredBy} />
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </StatusCard>
         </div>
       )}
 
-      <div className={`grid gap-4 ${isAdmin ? 'md:grid-cols-3' : ''}`}>
-        <StatusCard title="On call today" tone="brand">
-          {day.onCall ? <BigResident id={day.onCall} /> : <p className="text-sm text-slate-500">No one assigned</p>}
-          <p className="mt-2 text-xs text-slate-500">
-            Tomorrow: <ResidentName id={data.calls[addDays(date, 1)]} />
-          </p>
-        </StatusCard>
-        {isAdmin && (
-        <StatusCard title="Post-call (off)">
-          {day.postCall ? (
-            <>
-              <BigResident id={day.postCall} />
-              {day.residents.find((r) => r.residentId === day.postCall)?.coveredBy && (
-                <p className="mt-1 text-xs text-slate-600">
-                  Replaced by <ResidentName id={day.residents.find((r) => r.residentId === day.postCall)!.coveredBy} />
-                </p>
+      {/* Rotations */}
+      {day.workingDay ? (
+        <section className="flex flex-col gap-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="m-0 text-[22px] font-semibold md:text-2xl">Rotations</h2>
+            <div className="flex items-center gap-3">
+              <span className="text-[13px] text-muted md:text-sm">
+                {rotations.length} services<span className="hidden sm:inline"> · {staffed} residents</span>
+              </span>
+              {isAdmin && (
+                <button className="btn btn-sm no-print" onClick={() => setAdjusting(true)}>
+                  Adjust assignments
+                </button>
               )}
-            </>
-          ) : (
-            <p className="text-sm text-slate-500">Nobody</p>
-          )}
-        </StatusCard>
-        )}
-        {isAdmin && (
-        <StatusCard title={`On vacation (${vacation.length})`}>
-          {vacation.length === 0 && <p className="text-sm text-slate-500">Nobody</p>}
-          <ul className="space-y-1 text-sm">
-            {vacation.map((r) => (
-              <li key={r.residentId}>
-                <ResidentName id={r.residentId} /> <span className="text-xs text-slate-500">({r.monthly})</span>
-                {r.coveredBy && (
-                  <span className="text-xs text-slate-600">
-                    {' '}
-                    → covered by <ResidentName id={r.coveredBy} />
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </StatusCard>
-        )}
-      </div>
-
-      {day.workingDay && (
-        <div className="card mt-4">
-          <div className="card-title flex items-center justify-between">
-            <span>Rotations</span>
-            {isAdmin && (
-              <button className="btn btn-sm no-print" onClick={() => setAdjusting(true)}>
-                Adjust assignments
-              </button>
-            )}
+            </div>
           </div>
-          <div className="grid divide-y divide-slate-100 sm:grid-cols-2 sm:divide-y-0 lg:grid-cols-3">
-            {Object.entries(day.rotations).map(([rot, ids]) => (
-              <div key={rot} className="flex gap-3 px-4 py-3 sm:border-b sm:border-slate-100">
-                <div className="w-24 shrink-0 pt-0.5">
-                  <RotationChip name={rot} />
-                </div>
-                <div className="min-w-0 flex-1 space-y-1 text-sm">
-                  {ids.length === 0 && <span className="text-slate-400">—</span>}
+          <div className="grid gap-3 md:grid-cols-2 md:gap-4 lg:grid-cols-3">
+            {rotations.map(([rot, ids]) => {
+              const c = rotationColors(rot, rotByName.get(rot)?.kind);
+              return (
+                <div key={rot} className="card flex flex-col gap-3 p-4 md:min-h-[150px] md:gap-3.5 md:p-5">
+                  <div className="flex items-center gap-2.5">
+                    <RotationDot name={rot} />
+                    <span className="flex-1 text-xs font-bold uppercase tracking-[0.08em] text-label md:text-[13px]">{rot}</span>
+                    {ids.length > 0 && (
+                      <span className="text-xs font-semibold text-muted">
+                        {ids.length} {ids.length === 1 ? 'resident' : 'residents'}
+                      </span>
+                    )}
+                  </div>
+                  {ids.length === 0 && (
+                    <div className="flex flex-1 items-center text-sm text-muted md:justify-center md:rounded-xl md:border md:border-dashed md:border-[#d3d8e2] md:py-4">
+                      Unstaffed today
+                    </div>
+                  )}
                   {ids.map((id) => {
                     const r = day.residents.find((x) => x.residentId === id)!;
+                    const res = resById.get(id);
                     return (
-                      <div key={id}>
-                        <ResidentName id={id} phone />
-                        {isAdmin && r.coveringFor && (
-                          <div className="text-xs text-slate-500">
-                            covering <ResidentName id={r.coveringFor} short /> ({r.monthly === 'Post-Call' ? 'post-call' : 'vacation'})
-                          </div>
+                      <div key={id} className="flex items-center gap-3">
+                        <span className="avatar h-9 w-9 text-[13px] md:h-10 md:w-10 md:text-sm" style={{ background: c.tint, color: c.ink }}>
+                          {initials(res?.name ?? id)}
+                        </span>
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="flex flex-wrap items-center gap-1.5 text-[15px] font-semibold md:text-base">
+                            <ResidentName id={id} />
+                            {r.onCall && <span className="pill px-2 py-0 text-[10px]">on call</span>}
+                            {isAdmin && r.manual && <span className="pill bg-[#eef0f4] px-2 py-0 text-[10px] text-muted">manual</span>}
+                          </span>
+                          {isAdmin && r.coveringFor && (
+                            <span className="text-xs text-muted">
+                              covering <ResidentName id={r.coveringFor} short /> ({r.monthly === 'Post-Call' ? 'post-call' : 'vacation'})
+                            </span>
+                          )}
+                        </div>
+                        {res?.phone && (
+                          <a href={telHref(res.phone)} aria-label={`Call ${res.name}`} title={res.phone} className="icon-btn bg-brand-50 text-brand-700 hover:bg-brand-100">
+                            <PhoneIcon />
+                          </a>
                         )}
-                        {isAdmin && r.manual && <span className="ml-1 rounded bg-slate-100 px-1 text-[10px] text-slate-600">manual</span>}
-                        {r.onCall && <span className="ml-1 rounded bg-brand-100 px-1 text-[10px] font-semibold text-brand-800">on call</span>}
                       </div>
                     );
                   })}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+        </section>
+      ) : (
+        <div className="card px-5 py-4 text-sm text-muted">
+          {day.holiday ? 'Holiday' : 'Weekend'} – rotations are not staffed. Only the on-call resident is shown.
         </div>
       )}
 
       {isAdmin && (
-      <>
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        {covering.length > 0 && (
-          <div className="card">
-            <div className="card-title">Who covers whom</div>
-            <ul className="divide-y divide-slate-100 text-sm">
-              {covering.map((r) => (
-                <li key={r.residentId} className="px-4 py-2">
-                  <ResidentName id={r.residentId} /> <span className="text-slate-500">({r.monthly})</span> covers <ResidentName id={r.coveringFor} /> on{' '}
-                  <RotationChip name={r.assignment} small />
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {external.length > 0 && (
-          <div className="card">
-            <div className="card-title">External rotations (not in department)</div>
-            <ul className="divide-y divide-slate-100 text-sm">
-              {external.map((r) => (
-                <li key={r.residentId} className="flex justify-between px-4 py-2">
-                  <ResidentName id={r.residentId} phone />
-                  <RotationChip name={r.assignment} small />
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        {day.residents.some((r) => r.status === 'unassigned' || (r.status === 'off' && r.manual)) && (
-          <div className="card">
-            <div className="card-title">Unassigned / off</div>
-            <ul className="divide-y divide-slate-100 text-sm">
-              {day.residents
-                .filter((r) => r.status === 'unassigned' || (r.status === 'off' && r.manual))
-                .map((r) => (
-                  <li key={r.residentId} className="px-4 py-2">
-                    <ResidentName id={r.residentId} /> <span className="text-xs text-slate-500">{r.status}</span>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        )}
-      </div>
-
-      <div className="card mt-4">
-        <div className="card-title">Warnings for this day</div>
-        {isAdmin && day.coverCandidates.length > 1 && <CoverChooser day={day} />}
-        <IssueList issues={day.issues} />
-      </div>
-
-      {date === data.today && nextIssues.length > 0 && (
-        <div className="card mt-4">
-          <div className="card-title">Coming up (next 14 days)</div>
-          <IssueList issues={nextIssues.slice(0, 15)} showDate />
-          {nextIssues.length > 15 && (
-            <Link to="/warnings" className="block px-4 py-2 text-sm text-brand-700 hover:underline">
-              See all {nextIssues.length} →
-            </Link>
+        <>
+          {(covering.length > 0 || external.length > 0 || day.residents.some((r) => r.status === 'unassigned' || (r.status === 'off' && r.manual))) && (
+            <div className="grid gap-4 md:grid-cols-2">
+              {covering.length > 0 && (
+                <div className="card">
+                  <div className="card-title">Who covers whom</div>
+                  <ul className="divide-y divide-line text-sm">
+                    {covering.map((r) => (
+                      <li key={r.residentId} className="px-5 py-2.5">
+                        <ResidentName id={r.residentId} /> <span className="text-muted">({r.monthly})</span> covers <ResidentName id={r.coveringFor} /> on{' '}
+                        <RotationChip name={r.assignment} small />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {external.length > 0 && (
+                <div className="card">
+                  <div className="card-title">External rotations</div>
+                  <ul className="divide-y divide-line text-sm">
+                    {external.map((r) => (
+                      <li key={r.residentId} className="flex justify-between gap-2 px-5 py-2.5">
+                        <ResidentName id={r.residentId} phone />
+                        <RotationChip name={r.assignment} small />
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {day.residents.some((r) => r.status === 'unassigned' || (r.status === 'off' && r.manual)) && (
+                <div className="card">
+                  <div className="card-title">Unassigned / off</div>
+                  <ul className="divide-y divide-line text-sm">
+                    {day.residents
+                      .filter((r) => r.status === 'unassigned' || (r.status === 'off' && r.manual))
+                      .map((r) => (
+                        <li key={r.residentId} className="px-5 py-2.5">
+                          <ResidentName id={r.residentId} /> <span className="text-xs text-muted">{r.status}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
           )}
-        </div>
-      )}
-      </>
+
+          <div className="card">
+            <div className="card-title">Warnings for this day</div>
+            {day.coverCandidates.length > 1 && <CoverChooser day={day} />}
+            <IssueList issues={day.issues} />
+          </div>
+
+          {date === data.today && nextIssues.length > 0 && (
+            <div className="card">
+              <div className="card-title">Coming up (next 14 days)</div>
+              <IssueList issues={nextIssues.slice(0, 15)} showDate />
+              {nextIssues.length > 15 && (
+                <Link to="/warnings" className="block px-5 py-3 text-sm font-semibold">
+                  See all {nextIssues.length} →
+                </Link>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {adjusting && <AdjustModal day={day} onClose={() => setAdjusting(false)} />}
-      {!resById.size && <p className="mt-4 text-slate-500">No residents yet – add some on the Residents page or import an Excel file.</p>}
+      {!resById.size && <p className="text-muted">No residents yet – add some on the Residents page or import an Excel file.</p>}
     </div>
   );
 }
 
-function StatusCard({ title, children, tone }: { title: string; children: React.ReactNode; tone?: 'brand' }) {
+function StatusCard({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className={`card p-4 ${tone === 'brand' ? 'border-brand-600 ring-1 ring-brand-600' : ''}`}>
-      <div className="label">{title}</div>
+    <div className="card p-5">
+      <div className="label mb-2">{title}</div>
       {children}
-    </div>
-  );
-}
-
-function BigResident({ id }: { id: string }) {
-  const { resById } = useStore();
-  const r = resById.get(id);
-  return (
-    <div>
-      <div className="text-lg font-semibold">
-        <ResidentName id={id} />
-      </div>
-      {r && (
-        <div className="text-sm">
-          <span className="text-slate-500">{r.year}</span> · <PhoneLink phone={r.phone} />
-        </div>
-      )}
     </div>
   );
 }
@@ -237,7 +309,7 @@ function CoverChooser({ day }: { day: DaySchedule }) {
   const { data, mutate } = useStore();
   const current = data.coverChoices[day.date] ?? '';
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 bg-amber-50 px-4 py-2 text-sm">
+    <div className="flex flex-wrap items-center gap-2 border-b border-line bg-[#fdf6e3] px-5 py-3 text-sm">
       <span className="font-medium">Vacation Cover should cover:</span>
       <select
         className="input w-auto"
@@ -265,7 +337,7 @@ function AdjustModal({ day, onClose }: { day: DaySchedule; onClose: () => void }
   const set = (rid: string, v: string) => mutate(() => api(`/api/overrides/${day.date}/${rid}`, { method: 'PUT', json: { assignment: v } }));
   return (
     <Modal title={`Adjust ${formatDateLong(day.date)}`} onClose={onClose}>
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-muted">
         Manual overrides replace the computed assignment for this day only (e.g. to resolve a post-call or vacation conflict).
       </p>
       <table className="table">
@@ -274,7 +346,7 @@ function AdjustModal({ day, onClose }: { day: DaySchedule; onClose: () => void }
             <tr key={r.residentId}>
               <td>
                 <div className="font-medium">{resById.get(r.residentId)?.name}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted">
                   {r.monthly ?? 'unassigned'} · {r.status}
                 </div>
               </td>

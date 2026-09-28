@@ -61,13 +61,13 @@ export function ResidentPage() {
       </PageHeader>
       <div className="mb-4 flex flex-wrap gap-x-6 gap-y-1 text-sm">
         <span>
-          <span className="text-slate-500">ID</span> {resident.id}
+          <span className="text-muted">ID</span> {resident.id}
         </span>
         <span>
-          <span className="text-slate-500">Year</span> {resident.year}
+          <span className="text-muted">Year</span> {resident.year}
         </span>
         <PhoneLink phone={resident.phone} />
-        {!resident.active && <span className="rounded bg-slate-200 px-2 text-xs">inactive</span>}
+        {!resident.active && <span className="rounded bg-[#e6e9ef] px-2 text-xs">inactive</span>}
       </div>
 
       <div className="card mb-4">
@@ -77,9 +77,9 @@ export function ResidentPage() {
             <button
               key={m}
               onClick={() => setMonth(m)}
-              className={`rounded border p-2 text-left ${m === selMonth ? 'border-brand-600 ring-1 ring-brand-600' : 'border-slate-200 hover:bg-slate-50'}`}
+              className={`rounded border p-2 text-left ${m === selMonth ? 'border-brand-600 ring-1 ring-brand-600' : 'border-line hover:bg-[#f7f8fa]'}`}
             >
-              <div className="text-[11px] text-slate-500">{monthLabel(m)}</div>
+              <div className="text-[11px] text-muted">{monthLabel(m)}</div>
               <RotationChip name={data.monthly[resident.id]?.[m] ?? null} small />
             </button>
           ))}
@@ -97,7 +97,7 @@ export function ResidentPage() {
                   const rd = day.residents.find((r) => r.residentId === resident.id);
                   const { label, note } = describe(rd);
                   return (
-                    <tr key={d} className={`${day.workingDay ? '' : 'bg-slate-50 text-slate-500'} ${d === data.today ? 'bg-brand-50' : ''}`}>
+                    <tr key={d} className={`${day.workingDay ? '' : 'bg-[#f7f8fa] text-muted'} ${d === data.today ? 'bg-brand-50' : ''}`}>
                       <td className="w-32 whitespace-nowrap">
                         <Link to={`/day/${d}`} className="hover:underline">
                           {formatDateShort(d)}
@@ -105,9 +105,9 @@ export function ResidentPage() {
                       </td>
                       <td>
                         {day.workingDay || rd?.status === 'vacation' || rd?.status === 'external' ? <RotationChip name={label} small /> : null}
-                        {note && <span className="ml-2 text-xs text-slate-500">{note}</span>}
+                        {note && <span className="ml-2 text-xs text-muted">{note}</span>}
                         {rd?.coveringFor && (
-                          <span className="ml-1 text-xs text-slate-500">
+                          <span className="ml-1 text-xs text-muted">
                             for <ResidentName id={rd.coveringFor} short />
                           </span>
                         )}
@@ -133,17 +133,17 @@ export function ResidentPage() {
                   {formatDateShort(d)}
                 </Link>
               ))}
-              {upcomingCalls.length === 0 && <span className="text-slate-500">No upcoming calls.</span>}
+              {upcomingCalls.length === 0 && <span className="text-muted">No upcoming calls.</span>}
             </div>
           </div>
           <div className="card">
             <div className="card-title">Vacations</div>
-            <ul className="divide-y divide-slate-100 text-sm">
-              {vacations.length === 0 && <li className="px-4 py-2 text-slate-500">None this year.</li>}
+            <ul className="divide-y divide-line text-sm">
+              {vacations.length === 0 && <li className="px-4 py-2 text-muted">None this year.</li>}
               {vacations.map((v) => (
                 <li key={v.id} className="px-4 py-2">
-                  {formatDateShort(v.start)} → {formatDateShort(v.end)} <span className="text-xs text-slate-500">({diffDays(v.start, v.end) + 1} d)</span>
-                  {v.notes && <div className="text-xs text-slate-500">{v.notes}</div>}
+                  {formatDateShort(v.start)} → {formatDateShort(v.end)} <span className="text-xs text-muted">({diffDays(v.start, v.end) + 1} d)</span>
+                  {v.notes && <div className="text-xs text-muted">{v.notes}</div>}
                 </li>
               ))}
             </ul>
@@ -151,7 +151,7 @@ export function ResidentPage() {
           {issues.length > 0 && (
             <div className="card">
               <div className="card-title">Warnings involving {resident.name.split(' ')[0]}</div>
-              <ul className="divide-y divide-slate-100 text-xs">
+              <ul className="divide-y divide-line text-xs">
                 {issues.slice(0, 20).map((i, n) => (
                   <li key={n} className="px-4 py-1.5">
                     {i.date && (

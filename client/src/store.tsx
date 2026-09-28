@@ -94,6 +94,6 @@ export function DataProvider({ role, name, children }: { role: 'admin' | 'viewer
         </button>
       </div>
     );
-  if (!value) return <div className="p-8 text-center text-slate-500">Loading schedule…</div>;
+  if (!value) return <div className="p-8 text-center text-muted">Loading schedule…</div>;
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
