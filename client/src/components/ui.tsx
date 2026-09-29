@@ -2,7 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { addMonths, comboParts, formatDateShort, monthLabel, splitParts, type Issue, type MonthKey } from '@shared';
 import { useStore } from '../store';
-import { PhoneIcon, PrintIcon } from './icons';
+import { PrintIcon, WhatsAppIcon } from './icons';
 
 /** Rotation colours from the redesign: dot (accent), tint (background) and ink (text on tint). */
 export interface RotationColors {
@@ -114,21 +114,39 @@ export function RotationChip({ name, small }: { name: string | null; small?: boo
   );
 }
 
-export function telHref(phone: string) {
-  return `tel:${phone.replace(/[^\d+]/g, '')}`;
+/**
+ * WhatsApp chat link (wa.me needs the full international number, digits only).
+ * "+961 70 100 201" and "00961…" are used as written; a number with a leading 0 or no country code
+ * (e.g. "03 123 456", "70 100 201") is assumed to be Lebanese (+961).
+ */
+export function whatsappHref(phone: string) {
+  const raw = phone.trim();
+  let d = raw.replace(/\D/g, '');
+  if (raw.startsWith('+')) {
+    /* already international */
+  } else if (d.startsWith('00')) d = d.slice(2);
+  else d = `961${d.replace(/^0+/, '')}`;
+  return `https://wa.me/${d}`;
 }
 
 export function PhoneLink({ phone, className = '' }: { phone?: string; className?: string }) {
   if (!phone) return null;
   return (
-    <a href={telHref(phone)} className={`whitespace-nowrap text-brand-700 hover:underline ${className}`} onClick={(e) => e.stopPropagation()}>
-      <PhoneIcon size={13} className="mr-1 inline -translate-y-px" />
+    <a
+      href={whatsappHref(phone)}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Open WhatsApp chat"
+      className={`whitespace-nowrap text-brand-700 hover:underline ${className}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <WhatsAppIcon size={13} className="mr-1 inline -translate-y-px" />
       {phone}
     </a>
   );
 }
 
-/** Resident name linking to their page, optionally with a tap-to-call link. */
+/** Resident name linking to their page, optionally with a WhatsApp link. */
 export function ResidentName({ id, phone = false, short = false }: { id: string | null | undefined; phone?: boolean; short?: boolean }) {
   const { resById, isAdmin } = useStore();
   if (!id) return <span className="text-muted">—</span>;

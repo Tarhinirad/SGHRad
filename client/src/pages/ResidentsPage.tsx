@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PGY_YEARS, type Resident } from '@shared';
 import { api } from '../api';
-import { PhoneIcon } from '../components/icons';
-import { Modal, PageHeader, RotationChip, initials, telHref } from '../components/ui';
+import { WhatsAppIcon } from '../components/icons';
+import { Modal, PageHeader, RotationChip, initials, whatsappHref } from '../components/ui';
 import { useStore } from '../store';
 
 export function ResidentsPage() {
@@ -67,8 +67,8 @@ export function ResidentsPage() {
                         {r.phone && <span className="text-[13px] text-muted">{r.phone}</span>}
                       </div>
                       {r.phone && (
-                        <a href={telHref(r.phone)} aria-label={`Call ${r.name}`} className="icon-btn ml-auto bg-brand-50 text-brand-700 hover:bg-brand-100">
-                          <PhoneIcon />
+                        <a href={whatsappHref(r.phone)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${r.name}`} title="Open WhatsApp chat" className="icon-btn ml-auto bg-brand-50 text-brand-700 hover:bg-brand-100">
+                          <WhatsAppIcon />
                         </a>
                       )}
                     </div>

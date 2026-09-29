@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CALL_TYPES, MEDALS, academicYearStartFor, addDays, addMonths, callStats, daysInRange, firstOfMonth, formatDateLong, lastOfMonth, monthLabel, startOfWeek, weekday, type CallType, type MedalKind } from '@shared';
+import { CALL_TYPES, MEDALS, addDays, addMonths, callStats, daysInRange, firstOfMonth, formatDateLong, lastOfMonth, monthLabel, startOfWeek, weekday, type CallType, type MedalKind } from '@shared';
 import { api } from '../api';
 import { IssueList, Modal, PageHeader, PrintButton, ResidentName, shortName } from '../components/ui';
 import { useStore } from '../store';
@@ -178,14 +178,21 @@ const MEDAL_LABEL: Record<MedalKind, { label: string; hint: string; cls: string 
   diamond: { label: 'Diamond', hint: 'Golden plus Monday off, or Friday off with Thursday post-call', cls: 'bg-[#d7ecfb] text-[#0d5a8f]' },
 };
 
+/** First month (YYYY-MM) of the calendar trimester containing `month`. */
+function trimesterOf(month: string) {
+  const m = Number(month.slice(5, 7));
+  return `${month.slice(0, 4)}-${String(m - ((m - 1) % 3)).padStart(2, '0')}`;
+}
+
 /** Admin-only: call counts by type (with equivalents when days are off) and weekend medals. */
 function CallCounts({ month }: { month: string }) {
   const { data, engine } = useStore();
-  const [scope, setScope] = useState<'month' | 'year'>('month');
-  const ys = academicYearStartFor(firstOfMonth(month), data.settings.academicYearStartMonth);
-  const yFrom = firstOfMonth(ys);
-  const yTo = lastOfMonth(addMonths(ys, 11));
-  const [from, to] = scope === 'month' ? [firstOfMonth(month), lastOfMonth(month)] : [yFrom, yTo];
+  // Calendar trimesters: Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec. Starts on the trimester of the month shown above.
+  const [tri, setTri] = useState(() => trimesterOf(month));
+  useEffect(() => setTri(trimesterOf(month)), [month]);
+  const from = firstOfMonth(tri);
+  const to = lastOfMonth(addMonths(tri, 2));
+  const triLabel = `${monthLabel(tri).slice(0, 3)}–${monthLabel(addMonths(tri, 2)).slice(0, 3)} ${tri.slice(0, 4)}`;
   const residents = data.residents.filter((r) => r.active);
   const stats = callStats(
     residents.map((r) => r.id),
@@ -197,13 +204,14 @@ function CallCounts({ month }: { month: string }) {
   return (
     <div className="card overflow-x-auto lg:col-span-2">
       <div className="card-title flex flex-wrap items-center justify-between gap-2">
-        <span>Call counts</span>
-        <span className="flex gap-1 font-sans text-sm">
-          <button className={`btn btn-sm ${scope === 'month' ? 'btn-primary' : ''}`} onClick={() => setScope('month')}>
-            {monthLabel(month)}
+        <span>Call counts · trimester</span>
+        <span className="flex items-center gap-1 font-sans text-sm">
+          <button className="btn btn-sm" aria-label="Previous trimester" onClick={() => setTri(addMonths(tri, -3))}>
+            ‹
           </button>
-          <button className={`btn btn-sm ${scope === 'year' ? 'btn-primary' : ''}`} onClick={() => setScope('year')}>
-            Academic year
+          <span className="min-w-28 text-center font-semibold">{triLabel}</span>
+          <button className="btn btn-sm" aria-label="Next trimester" onClick={() => setTri(addMonths(tri, 3))}>
+            ›
           </button>
         </span>
       </div>
@@ -259,7 +267,7 @@ function CallCounts({ month }: { month: string }) {
           a Friday call counts as a Sat, a Thursday call as a Fri, and a Wednesday call as a Thu.
         </p>
         <p>
-          <b>Weekends</b> (Sat date in the period, only when Friday, Saturday and Sunday calls are all filled in; residents on vacation are skipped):{' '}
+          <b>Weekends</b> (Saturday within the trimester, only when Friday, Saturday and Sunday calls are all filled in; residents on vacation are skipped):{' '}
           <b>Bronze</b> Friday call, Sat and Sun off · <b>Silver</b> no call Fri, Sat or Sun · <b>Golden</b> post-call on Friday, no call Sat or Sun ·{' '}
           <b>Diamond</b> golden plus Monday off, or Friday off with Thursday post-call.
         </p>

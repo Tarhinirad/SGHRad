@@ -3,8 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { OFF, addDays, formatDateLong, isValidISO, onCallAt, parseISO, startOfWeek, type DaySchedule, type ResidentDay } from '@shared';
 import { hourLabel, useClock } from '../clock';
 import { api } from '../api';
-import { BellIcon, CalendarIcon, ChevronLeft, ChevronRight, MenuIcon, PhoneIcon } from '../components/icons';
-import { ComboSelect, IssueList, Modal, ResidentName, RotationChip, RotationDot, initials, rotationColors, telHref } from '../components/ui';
+import { BellIcon, CalendarIcon, ChevronLeft, ChevronRight, MenuIcon, WhatsAppIcon } from '../components/icons';
+import { ComboSelect, IssueList, Modal, ResidentName, RotationChip, RotationDot, initials, rotationColors, whatsappHref } from '../components/ui';
 import { useStore } from '../store';
 
 const fmt = (d: string, o: Intl.DateTimeFormatOptions) => parseISO(d).toLocaleDateString('en-GB', { ...o, timeZone: 'UTC' });
@@ -100,7 +100,15 @@ export function DayPage() {
           {onCall ? (
             <>
               <div className="truncate font-display text-2xl font-semibold md:text-[30px]">{onCall.name}</div>
-              <div className="text-sm text-[#c3cde3]">{onCall.phone || 'No number on file'}</div>
+              <div className="text-sm text-[#c3cde3]">
+                {onCall.phone ? (
+                  <a href={whatsappHref(onCall.phone)} target="_blank" rel="noopener noreferrer" className="text-[#c3cde3] underline decoration-white/30 hover:text-white">
+                    {onCall.phone}
+                  </a>
+                ) : (
+                  'No number on file'
+                )}
+              </div>
             </>
           ) : shift.current ? (
             <div className="font-display text-2xl font-medium text-[#c3cde3] md:text-[30px]">{shift.current}</div>
@@ -110,11 +118,13 @@ export function DayPage() {
         </div>
         {onCall?.phone && (
           <a
-            href={telHref(onCall.phone)}
+            href={whatsappHref(onCall.phone)}
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-amber-call px-5 text-[15px] font-bold text-[#1c1405] hover:bg-[#f5c04f] hover:text-[#1c1405] hover:no-underline"
           >
-            <PhoneIcon />
-            Call
+            <WhatsAppIcon />
+            WhatsApp
           </a>
         )}
       </section>
@@ -208,8 +218,8 @@ export function DayPage() {
                           )}
                         </div>
                         {res?.phone && (
-                          <a href={telHref(res.phone)} aria-label={`Call ${res.name}`} title={res.phone} className="icon-btn bg-brand-50 text-brand-700 hover:bg-brand-100">
-                            <PhoneIcon />
+                          <a href={whatsappHref(res.phone)} target="_blank" rel="noopener noreferrer" aria-label={`WhatsApp ${res.name}`} title={`WhatsApp ${res.phone}`} className="icon-btn bg-brand-50 text-brand-700 hover:bg-brand-100">
+                            <WhatsAppIcon />
                           </a>
                         )}
                       </div>

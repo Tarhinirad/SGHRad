@@ -40,3 +40,6 @@ export const PhoneIcon = ({ size = 18, className, strokeWidth = 2 }: P) =>
 
 export const PrintIcon = ({ size = 16, className, strokeWidth = 2 }: P) =>
   svg(size, strokeWidth, className, <><path d="M6 9V3h12v6" /><rect x="3" y="9" width="18" height="8" rx="2" /><path d="M6 14h12v7H6z" /></>);
+
+export const WhatsAppIcon = ({ size = 18, className, strokeWidth = 2 }: P) =>
+  svg(size, strokeWidth, className, <><path d="M3 21l1.6-4.7A8.5 8.5 0 1 1 8 19.5L3 21z" /><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .7a4.5 4.5 0 0 1-2-2l.7-1-1-2L9 8.5z" /></>);
