@@ -44,11 +44,15 @@ export function YearPage() {
             {residents.map((r) => (
               <tr key={r.id} className={r.active ? '' : 'opacity-50'}>
                 <td className="sticky left-0 z-10 whitespace-nowrap bg-white">
-                  <Link to={`/residents/${r.id}`} className="font-medium hover:underline">
-                    {r.name}
-                  </Link>
+                  {isAdmin ? (
+                    <Link to={`/residents/${r.id}`} className="font-medium hover:underline">
+                      {r.name}
+                    </Link>
+                  ) : (
+                    <span className="font-medium">{r.name}</span>
+                  )}
                   <div className="text-[10px] text-muted">
-                    {r.id} · {r.year}
+                    {isAdmin && <>{r.id} · </>}{r.year}
                   </div>
                 </td>
                 {months.map((m) => {

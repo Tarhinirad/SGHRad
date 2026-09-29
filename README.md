@@ -31,9 +31,10 @@ To wipe the database and re-seed, run `npm run seed` or use **Settings → Reset
 
 ## Access
 
-- **Viewing is public.** Anyone with the link sees the schedule, calls, vacations and resident phone numbers without a password.
+- **Public guests** (no password) see Today, Week and Residents.
+- **Resident view:** signing in with the resident password (`VIEWER_PASSWORD`) shows Today, Week, Year grid, Calls, Vacations and Residents, all read-only. Residents are listed PGY-4 first down to PGY-1.
 - **Editing requires the admin password** (`ADMIN_PASSWORD`). Use **Admin sign in** at the top right. The admin types their name when signing in, and that name is recorded in the audit log. The audit log is visible to admins only.
-- To require a password for viewing again, set `REQUIRE_LOGIN_TO_VIEW=true`. Residents then sign in with `VIEWER_PASSWORD`.
+- To require a password for viewing again, set `REQUIRE_LOGIN_TO_VIEW=true`. Everyone must then sign in; residents use `VIEWER_PASSWORD`.
 
 Admin logins last 30 days per device. **Set a strong `ADMIN_PASSWORD` before deploying.**
 

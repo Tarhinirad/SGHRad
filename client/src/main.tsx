@@ -83,12 +83,16 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         ) : (
-          // View mode: on call, daily and weekly schedule, resident directory.
+          // Read-only view. Signed-in residents (resident password) also get the year grid, calls and vacations;
+          // public guests only see today, the week and the directory.
           <Routes>
             <Route path="/" element={<DayPage />} />
             <Route path="/day/:date" element={<DayPage />} />
             <Route path="/week" element={<WeekPage />} />
             <Route path="/week/:date" element={<WeekPage />} />
+            {!me.guest && <Route path="/year" element={<YearPage />} />}
+            {!me.guest && <Route path="/calls" element={<CallsPage />} />}
+            {!me.guest && <Route path="/vacations" element={<VacationsPage />} />}
             <Route path="/residents" element={<ResidentsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

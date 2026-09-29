@@ -59,13 +59,16 @@ export function DataProvider({ role, name, children }: { role: 'admin' | 'viewer
   const value = useMemo<Store | null>(() => {
     if (!data) return null;
     const currentYearStart = academicYearStartFor(data.today, data.settings.academicYearStartMonth);
+    // Resident lists everywhere show PGY-4 first down to PGY-1 (stable within a year); the rule engine keeps the original order.
+    const pgy = (r: Resident) => Number(/(\d)/.exec(r.year)?.[1] ?? 0);
+    const residents = data.residents.map((r, i) => ({ r, i })).sort((a, b) => pgy(b.r) - pgy(a.r) || a.i - b.i).map((x) => x.r);
     return {
-      data,
+      data: { ...data, residents },
       engine: new ScheduleEngine(data),
       reload,
       isAdmin: role === 'admin',
       userName: name,
-      resById: new Map(data.residents.map((r) => [r.id, r])),
+      resById: new Map(residents.map((r) => [r.id, r])),
       rotByName: new Map(data.rotations.map((r) => [r.name, r])),
       mutate: async (fn) => {
         try {
