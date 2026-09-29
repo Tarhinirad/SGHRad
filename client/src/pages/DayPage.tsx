@@ -30,14 +30,12 @@ export function DayPage() {
   const isNow = date === clock.date;
   const shift = onCallAt(data.calls, date, isNow ? clock.hour : start, start);
   const onCall = shift.current ? resById.get(shift.current) : undefined;
-  const tomorrow = shift.next;
   const callLabel = isNow ? 'On call now' : 'On call';
   const callWhen = isNow
     ? shift.currentSince < date
       ? `Since yesterday ${hourLabel(start)} · until ${hourLabel(start)}`
       : `From ${hourLabel(start)} today`
     : `From ${hourLabel(start)}`;
-  const nextLabel = shift.nextFrom === date ? `From ${hourLabel(start)} today` : `Tomorrow · from ${hourLabel(start)}`;
   // Mammography is not shown on the daily view.
   const rotations = Object.entries(day.rotations).filter(([name]) => name !== 'Mammography');
   const staffed = new Set(rotations.flatMap(([, ids]) => ids)).size;
@@ -102,10 +100,7 @@ export function DayPage() {
           {onCall ? (
             <>
               <div className="truncate font-display text-2xl font-semibold md:text-[30px]">{onCall.name}</div>
-              <div className="text-sm text-[#c3cde3]">
-                {onCall.year}
-                {onCall.phone && <> · {onCall.phone}</>}
-              </div>
+              <div className="text-sm text-[#c3cde3]">{onCall.phone || 'No number on file'}</div>
             </>
           ) : shift.current ? (
             <div className="font-display text-2xl font-medium text-[#c3cde3] md:text-[30px]">{shift.current}</div>
@@ -122,11 +117,6 @@ export function DayPage() {
             Call
           </a>
         )}
-        <div className="h-px bg-white/15 md:h-auto md:w-px md:self-stretch" />
-        <div className="flex items-center justify-between gap-1 md:w-56 md:flex-col md:items-start">
-          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-[#a9b6d3] md:text-xs">Next · {nextLabel}</span>
-          <span className="text-sm font-semibold md:text-[17px]">{tomorrow ? resById.get(tomorrow)?.name ?? tomorrow : '—'}</span>
-        </div>
       </section>
 
       {/* Admin-only status cards */}

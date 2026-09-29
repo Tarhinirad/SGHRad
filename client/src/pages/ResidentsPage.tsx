@@ -37,7 +37,7 @@ export function ResidentsPage() {
         )}
       </PageHeader>
 
-      {PGY_YEARS.map((year) => {
+      {[...PGY_YEARS].reverse().map((year) => {
         const rs = list.filter((r) => r.year === year);
         if (!rs.length) return null;
         return (

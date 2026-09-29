@@ -6,9 +6,9 @@ import { LockIcon, LogoIcon, MenuIcon } from './icons';
 const NAV = [
   { to: '/', label: 'Today', end: true, public: true },
   { to: '/week', label: 'Week', public: true },
-  { to: '/year', label: 'Year grid' },
-  { to: '/calls', label: 'Calls' },
-  { to: '/vacations', label: 'Vacations' },
+  { to: '/year', label: 'Year grid', resident: true },
+  { to: '/calls', label: 'Calls', resident: true },
+  { to: '/vacations', label: 'Vacations', resident: true },
   { to: '/residents', label: 'Residents', public: true },
   { to: '/warnings', label: 'Warnings' },
   { to: '/import', label: 'Import / Export' },
@@ -21,11 +21,12 @@ export function Layout({ children, onLogout, onLogin, guest }: { children: React
   const [open, setOpen] = useState(false);
   const upcoming = isAdmin ? engine.day(data.today).issues.filter((i) => i.severity !== 'info').length : 0;
 
-  // View mode shows only the public pages; admins see everything.
-  const links = NAV.filter((n) => isAdmin || n.public);
-  // Few links (view mode) fit in the pill bar from tablet width; the admin's full menu from wide desktop.
-  const bar = 'hidden md:flex';
-  const burger = isAdmin ? 'lg:hidden' : 'md:hidden';
+  // Admins see everything; signed-in residents see the read-only pages; public guests only the public ones.
+  const links = NAV.filter((n) => isAdmin || n.public || (!guest && (n as { resident?: boolean }).resident));
+  // Guests' three links fit in the pill bar from tablet width; residents' six and the admin's full menu need a wider desktop.
+  const narrow = !isAdmin && guest;
+  const bar = narrow ? 'hidden md:flex' : 'hidden lg:flex';
+  const burger = narrow ? 'md:hidden' : 'lg:hidden';
   const link = (n: (typeof NAV)[number], mobile = false) => (
     <NavLink
       key={n.to}
@@ -73,16 +74,16 @@ export function Layout({ children, onLogout, onLogin, guest }: { children: React
             <button
               className="flex h-11 shrink-0 items-center gap-2 rounded-[10px] border border-white/25 px-3 text-[13px] font-semibold hover:bg-white/10 sm:px-4"
               onClick={onLogin}
-              aria-label="Admin sign in"
+              aria-label="Sign in"
             >
               <LockIcon />
-              <span className="hidden sm:inline">Admin sign in</span>
+              <span className="hidden sm:inline">Sign in</span>
             </button>
           ) : (
             <div className="flex shrink-0 items-center gap-3">
               <div className="hidden text-right text-[11px] leading-tight text-[#a9b6d3] sm:block">
                 <div className="max-w-[9rem] truncate font-semibold text-white">{userName}</div>
-                <div>{isAdmin ? 'Admin · can edit' : 'Read-only'}</div>
+                <div>{isAdmin ? 'Admin · can edit' : 'Resident view · read-only'}</div>
               </div>
               <button className="h-10 rounded-[10px] border border-white/25 px-3 text-[13px] font-semibold hover:bg-white/10" onClick={onLogout}>
                 Sign out

@@ -49,7 +49,7 @@ export function LoginPage({ onLogin, onCancel }: { onLogin: (token: string, role
             ← Back to the schedule
           </button>
         ) : (
-          <p className="mt-4 text-center text-xs text-muted">Residents use the read-only password; the admin password allows editing.</p>
+          <p className="mt-4 text-center text-xs text-muted">Residents: use the resident password for the read-only view. The admin password allows editing.</p>
         )}
       </form>
     </div>
