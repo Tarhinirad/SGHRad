@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { addDays, addMonths, daysInRange, firstOfMonth, formatDateLong, lastOfMonth, monthLabel, startOfWeek, weekday } from '@shared';
+import { CALL_TYPES, MEDALS, academicYearStartFor, addDays, addMonths, callStats, daysInRange, firstOfMonth, formatDateLong, lastOfMonth, monthLabel, startOfWeek, weekday, type CallType, type MedalKind } from '@shared';
 import { api } from '../api';
 import { IssueList, Modal, PageHeader, PrintButton, ResidentName, shortName } from '../components/ui';
 import { useStore } from '../store';
@@ -8,7 +8,7 @@ import { useStore } from '../store';
 const CALL_CODES = new Set(['vacation-and-call', 'consecutive-calls', 'external-on-call', 'inactive-on-call', 'unknown-resident']);
 
 export function CallsPage() {
-  const { data, engine, isAdmin, resById, yearOf, currentYearStart } = useStore();
+  const { data, engine, isAdmin, resById } = useStore();
   const [month, setMonth] = useState(data.today.slice(0, 7));
   const [editing, setEditing] = useState<string | null>(null);
   const from = firstOfMonth(month);
@@ -17,18 +17,6 @@ export function CallsPage() {
   const gridEnd = addDays(startOfWeek(to), 6);
   const cells = daysInRange(gridStart, gridEnd);
 
-  // Call counts: this month and academic year (fairness overview)
-  const { from: yFrom, to: yTo } = yearOf(currentYearStart);
-  const counts = new Map<string, { month: number; year: number; weekend: number }>();
-  for (const [d, id] of Object.entries(data.calls)) {
-    const c = counts.get(id) ?? { month: 0, year: 0, weekend: 0 };
-    if (d >= from && d <= to) c.month++;
-    if (d >= yFrom && d <= yTo) {
-      c.year++;
-      if (!engine.isWorkingDay(d)) c.weekend++;
-    }
-    counts.set(id, c);
-  }
   const monthIssues = engine
     .issues(from, to)
     .filter((i) => i.date && CALL_CODES.has(i.code));
@@ -95,41 +83,12 @@ export function CallsPage() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
+      <div className={`mt-4 grid gap-4 ${isAdmin ? 'lg:grid-cols-2' : ''}`}>
         <div className="card">
           <div className="card-title">Call problems this month</div>
           <IssueList issues={monthIssues} showDate empty="No call conflicts this month." />
         </div>
-        <div className="card overflow-x-auto">
-          <div className="card-title">Call counts</div>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Resident</th>
-                <th className="text-right">{monthLabel(month)}</th>
-                <th className="text-right">Academic year</th>
-                <th className="text-right">Weekend/holiday</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.residents
-                .filter((r) => r.active)
-                .map((r) => {
-                  const c = counts.get(r.id);
-                  return (
-                    <tr key={r.id}>
-                      <td>
-                        <ResidentName id={r.id} />
-                      </td>
-                      <td className="text-right">{c?.month ?? 0}</td>
-                      <td className="text-right">{c?.year ?? 0}</td>
-                      <td className="text-right">{c?.weekend ?? 0}</td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-        </div>
+        {isAdmin && <CallCounts month={month} />}
       </div>
 
       {editing && <CallEditor date={editing} onClose={() => setEditing(null)} onNavigate={setEditing} />}
@@ -201,5 +160,110 @@ function CallEditor({ date, onClose, onNavigate }: { date: string; onClose: () =
         </button>
       )}
     </Modal>
+  );
+}
+
+const TYPE_LABEL: Record<CallType, { label: string; hint: string }> = {
+  weekday: { label: 'Mon–Wed', hint: 'Weekday; post-call is an ordinary working day' },
+  thursday: { label: 'Thu', hint: 'Post-call day opens onto the weekend' },
+  friday: { label: 'Fri', hint: 'Working day, but the post-call day is already off' },
+  saturday: { label: 'Sat', hint: 'Weekend day; the next day is off too (no post-call benefit)' },
+  sunday: { label: 'Sun', hint: 'Weekend day followed by a working day (post-call benefit)' },
+};
+
+const MEDAL_LABEL: Record<MedalKind, { label: string; hint: string; cls: string }> = {
+  bronze: { label: 'Bronze', hint: 'Friday call; Saturday and Sunday off', cls: 'bg-[#f3e1d0] text-[#7a4a1d]' },
+  silver: { label: 'Silver', hint: 'No call on Friday, Saturday or Sunday', cls: 'bg-[#e8ebf0] text-[#4a5568]' },
+  golden: { label: 'Golden', hint: 'Post-call on Friday; no call Saturday or Sunday', cls: 'bg-[#fbeeb8] text-[#7a5a00]' },
+  diamond: { label: 'Diamond', hint: 'Golden plus Monday off, or Friday off with Thursday post-call', cls: 'bg-[#d7ecfb] text-[#0d5a8f]' },
+};
+
+/** Admin-only: call counts by type (with equivalents when days are off) and weekend medals. */
+function CallCounts({ month }: { month: string }) {
+  const { data, engine } = useStore();
+  const [scope, setScope] = useState<'month' | 'year'>('month');
+  const ys = academicYearStartFor(firstOfMonth(month), data.settings.academicYearStartMonth);
+  const yFrom = firstOfMonth(ys);
+  const yTo = lastOfMonth(addMonths(ys, 11));
+  const [from, to] = scope === 'month' ? [firstOfMonth(month), lastOfMonth(month)] : [yFrom, yTo];
+  const residents = data.residents.filter((r) => r.active);
+  const stats = callStats(
+    residents.map((r) => r.id),
+    from,
+    to,
+    { calls: data.calls, isWorking: (d) => engine.isWorkingDay(d), onVacation: (id, d) => !!engine.vacationOn(id, d) },
+  );
+
+  return (
+    <div className="card overflow-x-auto lg:col-span-2">
+      <div className="card-title flex flex-wrap items-center justify-between gap-2">
+        <span>Call counts</span>
+        <span className="flex gap-1 font-sans text-sm">
+          <button className={`btn btn-sm ${scope === 'month' ? 'btn-primary' : ''}`} onClick={() => setScope('month')}>
+            {monthLabel(month)}
+          </button>
+          <button className={`btn btn-sm ${scope === 'year' ? 'btn-primary' : ''}`} onClick={() => setScope('year')}>
+            Academic year
+          </button>
+        </span>
+      </div>
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Resident</th>
+            <th className="text-right">Total</th>
+            <th className="text-right" title="Calls on weekends and holidays">
+              Off days
+            </th>
+            {CALL_TYPES.map((t) => (
+              <th key={t} className="text-right" title={TYPE_LABEL[t].hint}>
+                {TYPE_LABEL[t].label}
+              </th>
+            ))}
+            {MEDALS.map((k) => (
+              <th key={k} className="text-right" title={MEDAL_LABEL[k].hint}>
+                {MEDAL_LABEL[k].label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {residents.map((r) => {
+            const c = stats.get(r.id)!;
+            return (
+              <tr key={r.id}>
+                <td>
+                  <ResidentName id={r.id} />
+                </td>
+                <td className="text-right font-semibold">{c.total}</td>
+                <td className="text-right">{c.offDays}</td>
+                {CALL_TYPES.map((t) => (
+                  <td key={t} className="text-right">
+                    {c.byType[t]}
+                  </td>
+                ))}
+                {MEDALS.map((k) => (
+                  <td key={k} className="text-right">
+                    {c.medals[k] ? <span className={`pill px-2 ${MEDAL_LABEL[k].cls}`}>{c.medals[k]}</span> : <span className="text-muted">0</span>}
+                  </td>
+                ))}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <div className="space-y-1 border-t border-line px-5 py-3 text-xs text-muted">
+        <p>
+          <b>Mon–Wed</b> weekday · <b>Thu</b> post-call opens onto the weekend · <b>Fri</b> weekday with no post-call benefit · <b>Sat</b> weekend, no
+          post-call benefit · <b>Sun</b> weekend with post-call. When a day is off (holiday or non-working day), calls count as the equivalent: with Friday off,
+          a Friday call counts as a Sat, a Thursday call as a Fri, and a Wednesday call as a Thu.
+        </p>
+        <p>
+          <b>Weekends</b> (Sat date in the period, only when Friday, Saturday and Sunday calls are all filled in; residents on vacation are skipped):{' '}
+          <b>Bronze</b> Friday call, Sat and Sun off · <b>Silver</b> no call Fri, Sat or Sun · <b>Golden</b> post-call on Friday, no call Sat or Sun ·{' '}
+          <b>Diamond</b> golden plus Monday off, or Friday off with Thursday post-call.
+        </p>
+      </div>
+    </div>
   );
 }

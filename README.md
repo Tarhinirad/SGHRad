@@ -113,7 +113,7 @@ These are defaults you can change in **Settings**, with no code changes needed:
 - **Today / Day:** each rotation with its residents and tap-to-call links; who is on call, who is post-call, who is on vacation and who covers whom. Admins get a cover-conflict chooser and *Adjust assignments*.
 - **Week:** rotations × days; printable.
 - **Year grid:** residents × months with drop-downs (admin), plus Vacation Cover and Post-Call checks per month; printable.
-- **Calls:** month calendar; click a day to set who is on call (the picker marks residents on vacation, on call yesterday or tomorrow, or on an external rotation). Also shows call counts for fairness.
+- **Calls:** month calendar; click a day to set who is on call (the picker marks residents on vacation, on call yesterday or tomorrow, or on an external rotation). Admins also see call counts (total, weekend/holiday, Mon–Wed / Thu / Fri / Sat / Sun with equivalents when a day is off) and weekend medals (bronze, silver, golden, diamond). Residents see the call calendar only.
 - **Vacations:** timeline calendar with overlap counts, and a list with add/edit/delete and overlap detection.
 - **Residents:** directory by year; add, edit, deactivate.
 - **Resident view:** one resident's year: monthly assignments, day-by-day schedule, calls, vacations and related warnings.
