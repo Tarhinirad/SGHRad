@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { OFF, addDays, formatDateLong, isValidISO, onCallAt, parseISO, startOfWeek, type DaySchedule, type ResidentDay } from '@shared';
-import { hourLabel, useClock } from '../clock';
+import { OFF, addDays, callShiftConfig, callStartMin, formatDateLong, isValidISO, minutesToTime, onCallAt, parseISO, startOfWeek, type DaySchedule, type ResidentDay } from '@shared';
+import { useClock } from '../clock';
 import { api } from '../api';
 import { BellIcon, CalendarIcon, ChevronLeft, ChevronRight, MenuIcon, WhatsAppIcon } from '../components/icons';
 import { ComboSelect, IssueList, Modal, ResidentName, RotationChip, RotationDot, initials, rotationColors, whatsappHref } from '../components/ui';
@@ -23,19 +23,24 @@ export function DayPage() {
   const external = by((r) => r.status === 'external');
   const covering = by((r) => !!r.coveringFor);
   const nextIssues = engine.issues(addDays(data.today, 1), addDays(data.today, 14)).filter((i) => i.severity !== 'info');
-  // A call listed for date D runs from D at callStartHour (08:00) to D+1 at 08:00, so on the
-  // current day, before 08:00, the previous day's resident is still the one on call.
+  // A call listed for date D starts at 16:30 on a working day or 08:00 on a weekend/holiday and ends
+  // at 08:00 on D+1 (settings). Between the morning handover and the evening start of a working day
+  // nobody is on call; the resident about to start is shown as "on call tonight".
   const clock = useClock(data.timeZone);
-  const start = data.settings.callStartHour ?? 8;
+  const cfg = callShiftConfig(data.settings, (d) => engine.isWorkingDay(d));
   const isNow = date === clock.date;
-  const shift = onCallAt(data.calls, date, isNow ? clock.hour : start, start);
-  const onCall = shift.current ? resById.get(shift.current) : undefined;
-  const callLabel = isNow ? 'On call now' : 'On call';
-  const callWhen = isNow
-    ? shift.currentSince < date
-      ? `Since yesterday ${hourLabel(start)} · until ${hourLabel(start)}`
-      : `From ${hourLabel(start)} today`
-    : `From ${hourLabel(start)}`;
+  const shift = onCallAt(data.calls, date, isNow ? clock.hour * 60 + clock.minute : callStartMin(date, cfg), cfg);
+  const shownId = shift.gap ? shift.next : shift.current;
+  const onCall = shownId ? resById.get(shownId) : undefined;
+  const end = minutesToTime(cfg.endMin);
+  const callLabel = !isNow ? 'On call' : shift.gap ? 'On call tonight' : 'On call now';
+  const callWhen = !isNow
+    ? `${minutesToTime(callStartMin(date, cfg))} → ${end} next day`
+    : shift.gap
+      ? `From ${minutesToTime(shift.nextFromMin)} today · until ${end} tomorrow`
+      : shift.currentSince < date
+        ? `Since yesterday ${minutesToTime(shift.currentSinceMin)} · until ${end}`
+        : `Since ${minutesToTime(shift.currentSinceMin)} today · until ${end} tomorrow`;
   // Mammography is not shown on the daily view.
   const rotations = Object.entries(day.rotations).filter(([name]) => name !== 'Mammography');
   const staffed = new Set(rotations.flatMap(([, ids]) => ids)).size;
@@ -110,8 +115,8 @@ export function DayPage() {
                 )}
               </div>
             </>
-          ) : shift.current ? (
-            <div className="font-display text-2xl font-medium text-[#c3cde3] md:text-[30px]">{shift.current}</div>
+          ) : shownId ? (
+            <div className="font-display text-2xl font-medium text-[#c3cde3] md:text-[30px]">{shownId}</div>
           ) : (
             <div className="font-display text-2xl font-medium text-[#c3cde3] md:text-[30px]">No one assigned</div>
           )}

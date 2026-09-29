@@ -12,6 +12,8 @@ import {
   firstOfMonth,
   isValidISO,
   lastOfMonth,
+  minutesToTime,
+  timeToMinutes,
   type Resident,
   type Rotation,
   type Settings,
@@ -389,10 +391,12 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
         if (!(Number.isInteger(d) && d >= 1 && d <= 27)) throw bad('splitDay must be 1-27');
         next.splitDay = d;
       }
-      if (b.callStartHour !== undefined) {
-        const h = Number(b.callStartHour);
-        if (!(Number.isInteger(h) && h >= 0 && h <= 23)) throw bad('callStartHour must be 0-23');
-        next.callStartHour = h;
+      for (const k of ['callWeekdayStart', 'callOffDayStart', 'callEnd'] as const) {
+        if (b[k] !== undefined) {
+          const min = timeToMinutes(String(b[k]));
+          if (!(min >= 0 && min < 24 * 60)) throw bad(`${k} must be a time like 16:30`);
+          next[k] = minutesToTime(min);
+        }
       }
       if (b.maxPerRotation !== undefined) {
         const m = Number(b.maxPerRotation);

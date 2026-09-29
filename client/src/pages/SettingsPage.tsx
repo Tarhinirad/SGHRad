@@ -70,19 +70,30 @@ function RulesCard() {
             />
           </div>
           <div className="col-span-2">
-            <label className="label">Call shift starts at (hour, hospital time)</label>
-            <input
-              type="number"
-              min={0}
-              max={23}
-              className="input w-24"
-              disabled={!isAdmin}
-              defaultValue={s.callStartHour}
-              onBlur={(e) => Number(e.target.value) !== s.callStartHour && void save({ callStartHour: Number(e.target.value) })}
-            />
+            <label className="label">On-call hours (hospital time)</label>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+              {(
+                [
+                  ['callWeekdayStart', 'Working-day call starts'],
+                  ['callOffDayStart', 'Weekend / holiday call starts'],
+                  ['callEnd', 'Every call ends next morning'],
+                ] as const
+              ).map(([k, label]) => (
+                <label key={k} className="flex items-center gap-2">
+                  {label}
+                  <input
+                    type="time"
+                    className="input w-28"
+                    disabled={!isAdmin}
+                    defaultValue={s[k]}
+                    onBlur={(e) => e.target.value && e.target.value !== s[k] && void save({ [k]: e.target.value })}
+                  />
+                </label>
+              ))}
+            </div>
             <span className="text-xs text-muted">
-              A call on a given date runs from {String(s.callStartHour).padStart(2, '0')}:00 that day until {String(s.callStartHour).padStart(2, '0')}:00 the next day;
-              before that hour the previous day's resident is shown as on call.
+              A call listed on a working day runs from {s.callWeekdayStart} until {s.callEnd} the next morning; a call listed on a weekend or holiday runs from{' '}
+              {s.callOffDayStart} until {s.callEnd} the next morning. On a working day between {s.callEnd} and {s.callWeekdayStart} nobody is on call.
             </span>
           </div>
           <div className="col-span-2">

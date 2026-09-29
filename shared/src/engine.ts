@@ -33,6 +33,7 @@ import {
   type ResidentDay,
   type Rotation,
   type ScheduleData,
+  type Settings,
   type Vacation,
 } from './types';
 
@@ -431,19 +432,87 @@ export class ScheduleEngine {
   }
 }
 
+/** "16:30" → 990 (minutes since midnight). */
+export function timeToMinutes(t: string): number {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(t.trim());
+  return m ? Number(m[1]) * 60 + Number(m[2]) : NaN;
+}
+
+/** 990 → "16:30". */
+export function minutesToTime(min: number): string {
+  return `${String(Math.floor(min / 60)).padStart(2, '0')}:${String(min % 60).padStart(2, '0')}`;
+}
+
+export interface CallShiftConfig {
+  /** Start of a call listed on a working day, minutes since midnight (16:30 → 990). */
+  weekdayStartMin: number;
+  /** Start of a call listed on a weekend/holiday, minutes since midnight (08:00 → 480). */
+  offDayStartMin: number;
+  /** End of every call the next morning, minutes since midnight (08:00 → 480). */
+  endMin: number;
+  isWorking: (d: ISODate) => boolean;
+}
+
+export function callShiftConfig(s: Settings, isWorking: (d: ISODate) => boolean): CallShiftConfig {
+  return {
+    weekdayStartMin: timeToMinutes(s.callWeekdayStart),
+    offDayStartMin: timeToMinutes(s.callOffDayStart),
+    endMin: timeToMinutes(s.callEnd),
+    isWorking,
+  };
+}
+
+/** Minute of the day at which the call listed on `date` starts. */
+export function callStartMin(date: ISODate, cfg: CallShiftConfig): number {
+  return cfg.isWorking(date) ? cfg.weekdayStartMin : cfg.offDayStartMin;
+}
+
+export interface CallShiftState {
+  /** Resident on call at that moment; null when nobody is (see `gap`) or nothing is scheduled. */
+  current: string | null;
+  currentSince: ISODate;
+  currentSinceMin: number;
+  /** True between the morning handover and the start of the day's call (e.g. 08:00–16:30 on a working day). */
+  gap: boolean;
+  /** The next resident to start: today's caller during the gap, otherwise tomorrow's. */
+  next: string | null;
+  nextFrom: ISODate;
+  nextFromMin: number;
+}
+
 /**
- * Who is on call at a given moment. A call listed for date D runs from D at `callStartHour`
- * until D+1 at `callStartHour`, so before that hour the previous day's resident is still on call.
+ * Who is on call at a given moment. A call listed for date D starts at `callStartMin(D)`
+ * (16:30 on a working day, 08:00 on a weekend/holiday) and ends at `endMin` (08:00) on D+1.
+ * On a working day after the morning handover nobody is on call until the evening start.
  */
-export function onCallAt(
-  calls: Record<ISODate, string>,
-  date: ISODate,
-  hour: number,
-  callStartHour: number,
-): { current: string | null; currentSince: ISODate; next: string | null; nextFrom: ISODate } {
-  const shiftDate = hour < callStartHour ? addDays(date, -1) : date;
-  const nextDate = addDays(shiftDate, 1);
-  return { current: calls[shiftDate] ?? null, currentSince: shiftDate, next: calls[nextDate] ?? null, nextFrom: nextDate };
+export function onCallAt(calls: Record<ISODate, string>, date: ISODate, minute: number, cfg: CallShiftConfig): CallShiftState {
+  const prev = addDays(date, -1);
+  const next = addDays(date, 1);
+  if (minute < cfg.endMin) {
+    // Yesterday's call is still running.
+    return {
+      current: calls[prev] ?? null,
+      currentSince: prev,
+      currentSinceMin: callStartMin(prev, cfg),
+      gap: false,
+      next: calls[date] ?? null,
+      nextFrom: date,
+      nextFromMin: callStartMin(date, cfg),
+    };
+  }
+  const start = callStartMin(date, cfg);
+  if (minute < start) {
+    return { current: null, currentSince: date, currentSinceMin: cfg.endMin, gap: true, next: calls[date] ?? null, nextFrom: date, nextFromMin: start };
+  }
+  return {
+    current: calls[date] ?? null,
+    currentSince: date,
+    currentSinceMin: start,
+    gap: false,
+    next: calls[next] ?? null,
+    nextFrom: next,
+    nextFromMin: callStartMin(next, cfg),
+  };
 }
 
 export function computeDay(data: ScheduleData, date: ISODate): DaySchedule {

@@ -505,18 +505,44 @@ describe('split months ("Body/IR")', () => {
   });
 });
 
-describe('call shift handover (onCallAt)', () => {
-  const calls = { '2026-09-07': 'A', '2026-09-08': 'B', '2026-09-09': 'C' };
-  it('before the start hour the previous day’s resident is still on call', () => {
-    expect(onCallAt(calls, '2026-09-08', 7, 8)).toEqual({ current: 'A', currentSince: '2026-09-07', next: 'B', nextFrom: '2026-09-08' });
+describe('call shift hours (onCallAt)', () => {
+  // Mon 7 … Fri 11, Sat 12, Sun 13, Mon 14 (working days Mon–Fri)
+  const calls = { '2026-09-07': 'A', '2026-09-08': 'B', '2026-09-11': 'F', '2026-09-12': 'S', '2026-09-13': 'U', '2026-09-14': 'M' };
+  const cfg = (off: string[] = []) => ({
+    weekdayStartMin: 16 * 60 + 30,
+    offDayStartMin: 8 * 60,
+    endMin: 8 * 60,
+    isWorking: (d: string) => ![0, 6].includes(new Date(`${d}T00:00:00Z`).getUTCDay()) && !off.includes(d),
   });
-  it('from the start hour the day’s own resident is on call', () => {
-    expect(onCallAt(calls, '2026-09-08', 8, 8)).toEqual({ current: 'B', currentSince: '2026-09-08', next: 'C', nextFrom: '2026-09-09' });
-    expect(onCallAt(calls, '2026-09-08', 23, 8).current).toBe('B');
+  const at = (date: string, h: number, m = 0, off: string[] = []) => onCallAt(calls, date, h * 60 + m, cfg(off));
+
+  it('a working-day call runs from 16:30 until 08:00 the next morning', () => {
+    expect(at('2026-09-08', 16, 29)).toMatchObject({ current: null, gap: true, next: 'B', nextFrom: '2026-09-08', nextFromMin: 990 });
+    expect(at('2026-09-08', 16, 30)).toMatchObject({ current: 'B', currentSince: '2026-09-08', currentSinceMin: 990, gap: false });
+    expect(at('2026-09-08', 23, 59).current).toBe('B');
+    expect(at('2026-09-09', 7, 59)).toMatchObject({ current: 'B', currentSince: '2026-09-08', gap: false });
   });
-  it('handles missing entries and a custom hour', () => {
-    expect(onCallAt(calls, '2026-09-07', 5, 8)).toMatchObject({ current: null, next: 'A' });
-    expect(onCallAt(calls, '2026-09-08', 6, 6).current).toBe('B');
+  it('nobody is on call between the morning handover and the evening start of a working day', () => {
+    expect(at('2026-09-08', 8, 0)).toMatchObject({ current: null, gap: true, next: 'B' });
+    expect(at('2026-09-08', 12)).toMatchObject({ current: null, gap: true, next: 'B' });
+  });
+  it('a weekend call runs 08:00 to 08:00 with no gap', () => {
+    expect(at('2026-09-12', 7, 59)).toMatchObject({ current: 'F', currentSince: '2026-09-11', next: 'S', nextFromMin: 480 });
+    expect(at('2026-09-12', 8, 0)).toMatchObject({ current: 'S', currentSince: '2026-09-12', currentSinceMin: 480, gap: false, next: 'U' });
+    expect(at('2026-09-13', 8, 0).current).toBe('U');
+  });
+  it('after a Sunday call, Monday has a daytime gap until 16:30', () => {
+    expect(at('2026-09-14', 7, 59).current).toBe('U');
+    expect(at('2026-09-14', 8, 0)).toMatchObject({ current: null, gap: true, next: 'M' });
+    expect(at('2026-09-14', 16, 30).current).toBe('M');
+  });
+  it('a holiday uses the 08:00 start; the Friday before shows Saturday next', () => {
+    expect(at('2026-09-08', 8, 0, ['2026-09-08'])).toMatchObject({ current: 'B', gap: false });
+    expect(at('2026-09-11', 20, 0)).toMatchObject({ current: 'F', next: 'S', nextFromMin: 480 });
+  });
+  it('handles missing entries', () => {
+    expect(at('2026-09-09', 17)).toMatchObject({ current: null, gap: false });
+    expect(at('2026-09-10', 6)).toMatchObject({ current: null });
   });
 });
 
