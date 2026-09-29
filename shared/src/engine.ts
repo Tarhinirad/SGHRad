@@ -227,14 +227,8 @@ export class ScheduleEngine {
           callerDay.assignment = null;
           callerDay.coveringFor = undefined;
           if (callerDay.monthly === POST_CALL) {
-            issues.push({
-              severity: 'warning',
-              code: 'post-call-self',
-              date,
-              resolvable: true,
-              message: `${callerName} (the Post-Call resident this month) was on call yesterday and is off today; nobody is available as Post-Call replacement.`,
-              residentIds: [callerDay.residentId],
-            });
+            // Expected: the Post-Call resident who took the call is the one who is off, so there is
+            // nobody to replace and no rotation loses a resident. No warning.
           } else {
             const pc = pcResidents.find((d) => d.residentId !== callerDay.residentId);
             if (!pc) {

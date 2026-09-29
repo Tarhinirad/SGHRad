@@ -71,8 +71,8 @@ For each date, the engine starts from each resident's monthly assignment and app
 3. **Post-Call.** Yesterday's on-call resident is *Off – Post-Call* today, and the Post-Call resident takes over whatever that resident would have done today. That includes a rotation they were covering as Vacation Cover.
    - The following cases are **flagged** for the admin to resolve with *Adjust assignments* on the day view:
      - the caller was on an external rotation
-     - the caller is the Post-Call resident themself
      - the Post-Call resident is on vacation, or none is assigned, so a rotation loses a resident
+   - A caller who is the Post-Call resident themself is simply off the next day: nobody needs to be replaced, so there is no warning.
    - A caller who is on vacation today is only noted, since Vacation Cover already handles it.
    - If there is nobody to replace, the Post-Call resident goes to Mammography (setting).
    - Weekend and holiday calls: by default, the Sunday on-call resident is off on Monday (setting: *Post-call applies after weekend/holiday calls*).

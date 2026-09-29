@@ -226,12 +226,16 @@ describe('rule 3: post-call', () => {
     expect(who(day, 'PC').assignment).toBe('Mammography');
   });
 
-  it('flags when the caller is the Post-Call resident themself', () => {
+  it('is not a problem when the caller is the Post-Call resident: they are simply off', () => {
     const d = makeData();
     d.calls[MON] = 'PC';
     const day = computeDay(d, TUE);
     expect(who(day, 'PC').status).toBe('post-call');
-    expect(day.issues.find((i) => i.code === 'post-call-self')).toMatchObject({ resolvable: true });
+    expect(who(day, 'PC').assignment).toBeNull();
+    expect(day.postCall).toBe('PC');
+    // Nobody is pulled in to cover, and no warning is raised.
+    expect(day.issues.filter((i) => i.severity !== 'info')).toEqual([]);
+    expect(day.rotations['Body']).toEqual(['A']);
   });
 
   it('flags when the Post-Call resident is on vacation', () => {

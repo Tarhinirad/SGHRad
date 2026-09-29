@@ -14,7 +14,6 @@ const LABELS: Record<IssueCode, string> = {
   'vacation-uncovered': 'Vacation not covered',
   'post-call-external': 'Post-call after external rotation',
   'post-call-on-vacation': 'Post-call resident on vacation',
-  'post-call-self': 'Post-Call resident was on call',
   'post-call-uncovered': 'Post-call not replaced',
   'external-on-call': 'External resident on call',
   'inactive-on-call': 'Inactive resident on call',

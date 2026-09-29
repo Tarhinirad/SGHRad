@@ -204,7 +204,6 @@ export type IssueCode =
   | 'vacation-uncovered'
   | 'post-call-external'
   | 'post-call-on-vacation'
-  | 'post-call-self'
   | 'post-call-uncovered'
   | 'external-on-call'
   | 'inactive-on-call'
