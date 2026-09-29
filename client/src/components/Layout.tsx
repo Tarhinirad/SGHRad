@@ -9,6 +9,7 @@ const NAV = [
   { to: '/year', label: 'Year grid', resident: true },
   { to: '/calls', label: 'Calls', resident: true },
   { to: '/vacations', label: 'Vacations', resident: true },
+  { to: '/ir-codes', label: 'IR codes', public: true },
   { to: '/residents', label: 'Residents', public: true },
   { to: '/warnings', label: 'Warnings' },
   { to: '/import', label: 'Import / Export' },
@@ -23,10 +24,10 @@ export function Layout({ children, onLogout, onLogin, guest }: { children: React
 
   // Admins see everything; signed-in residents see the read-only pages; public guests only the public ones.
   const links = NAV.filter((n) => isAdmin || n.public || (!guest && (n as { resident?: boolean }).resident));
-  // Guests' three links fit in the pill bar from tablet width; residents' six and the admin's full menu need a wider desktop.
+  // Guests' three links fit in the pill bar from tablet width; residents' seven need a wide desktop, and the admin's menu has its own row from lg.
   const narrow = !isAdmin && guest;
-  const bar = narrow ? 'hidden md:flex' : 'hidden lg:flex';
-  const burger = narrow ? 'md:hidden' : 'lg:hidden';
+  const bar = narrow ? 'hidden md:flex' : 'hidden xl:flex';
+  const burger = narrow ? 'md:hidden' : isAdmin ? 'lg:hidden' : 'xl:hidden';
   const link = (n: (typeof NAV)[number], mobile = false) => (
     <NavLink
       key={n.to}

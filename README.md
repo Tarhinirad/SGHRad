@@ -31,8 +31,8 @@ To wipe the database and re-seed, run `npm run seed` or use **Settings → Reset
 
 ## Access
 
-- **Public guests** (no password) see Today, Week and Residents.
-- **Resident view:** signing in with the resident password (`VIEWER_PASSWORD`) shows Today, Week, Year grid, Calls, Vacations and Residents, all read-only. Residents are listed PGY-4 first down to PGY-1.
+- **Public guests** (no password) see Today, Week, IR codes and Residents.
+- **Resident view:** signing in with the resident password (`VIEWER_PASSWORD`) shows Today, Week, Year grid, Calls, Vacations, IR codes and Residents, all read-only. Residents are listed PGY-4 first down to PGY-1.
 - **Editing requires the admin password** (`ADMIN_PASSWORD`). Use **Admin sign in** at the top right. The admin types their name when signing in, and that name is recorded in the audit log. The audit log is visible to admins only.
 - To require a password for viewing again, set `REQUIRE_LOGIN_TO_VIEW=true`. Everyone must then sign in; residents use `VIEWER_PASSWORD`.
 
@@ -116,6 +116,7 @@ These are defaults you can change in **Settings**, with no code changes needed:
 - **Calls:** month calendar; click a day to set who is on call (the picker marks residents on vacation, on call yesterday or tomorrow, or on an external rotation). Admins also see call counts per trimester (Jan–Mar, Apr–Jun, Jul–Sep, Oct–Dec; total, weekend/holiday, Mon–Wed / Thu / Fri / Sat / Sun with equivalents when a day is off) and weekend medals (bronze, silver, golden, diamond). Residents see the call calendar only.
 - **Vacations:** timeline calendar with overlap counts, and a list with add/edit/delete and overlap detection.
 - **Residents:** directory by year; add, edit, deactivate.
+- **IR codes:** billing codes for interventional procedures (main code plus a CT 4216 or US 5502 guidance code), visible to everyone. Admins can add, edit, reorder and delete procedures, and change the guidance codes.
 - **Resident view:** one resident's year: monthly assignments, day-by-day schedule, calls, vacations and related warnings.
 - **Warnings:** the dashboard, grouped by type.
 - **Import / Export:** Excel download (current data or a blank template), and upload with preview.

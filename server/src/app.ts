@@ -12,7 +12,9 @@ import {
   firstOfMonth,
   isValidISO,
   lastOfMonth,
+  DEFAULT_IR_CODES,
   minutesToTime,
+  normalizeIrCodes,
   timeToMinutes,
   type Resident,
   type Rotation,
@@ -111,6 +113,12 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
 
   app.get('/api/data', (_req, res) => {
     res.json({ ...repo.loadScheduleData(db), today: today(), timeZone: timeZone() });
+  });
+
+  // IR billing codes: readable by everyone, editable by the admin.
+  app.get('/api/ir-codes', (_req, res) => {
+    const raw = repo.getSetting(db, 'irCodes');
+    res.json(raw ? JSON.parse(raw) : DEFAULT_IR_CODES);
   });
 
   app.get(
@@ -423,6 +431,21 @@ export function createApp(db: DB, opts: { onChange?: () => void } = {}) {
       }
       repo.saveSettings(db, next);
       repo.audit(db, user(req), 'update', 'settings', { before, after: next });
+      res.json(next);
+    }),
+  );
+
+  app.put(
+    '/api/ir-codes',
+    wrap((req, res) => {
+      let next;
+      try {
+        next = normalizeIrCodes(req.body);
+      } catch (e) {
+        throw bad((e as Error).message);
+      }
+      repo.putSetting(db, 'irCodes', JSON.stringify(next));
+      repo.audit(db, user(req), 'update', 'ir-codes', { procedures: next.procedures.length });
       res.json(next);
     }),
   );

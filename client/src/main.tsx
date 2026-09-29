@@ -8,6 +8,7 @@ import { AuditPage } from './pages/AuditPage';
 import { CallsPage } from './pages/CallsPage';
 import { DayPage } from './pages/DayPage';
 import { ImportExportPage } from './pages/ImportExportPage';
+import { IrCodesPage } from './pages/IrCodesPage';
 import { LoginPage } from './pages/LoginPage';
 import { ResidentPage } from './pages/ResidentPage';
 import { ResidentsPage } from './pages/ResidentsPage';
@@ -74,6 +75,7 @@ function App() {
             <Route path="/year" element={<YearPage />} />
             <Route path="/calls" element={<CallsPage />} />
             <Route path="/vacations" element={<VacationsPage />} />
+            <Route path="/ir-codes" element={<IrCodesPage />} />
             <Route path="/residents" element={<ResidentsPage />} />
             <Route path="/residents/:id" element={<ResidentPage />} />
             <Route path="/warnings" element={<WarningsPage />} />
@@ -93,6 +95,7 @@ function App() {
             {!me.guest && <Route path="/year" element={<YearPage />} />}
             {!me.guest && <Route path="/calls" element={<CallsPage />} />}
             {!me.guest && <Route path="/vacations" element={<VacationsPage />} />}
+            <Route path="/ir-codes" element={<IrCodesPage />} />
             <Route path="/residents" element={<ResidentsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

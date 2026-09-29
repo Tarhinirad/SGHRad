@@ -121,6 +121,20 @@ describe('API', () => {
     await call('/api/rotations/Nuc Med', { method: 'PUT', token: admin, json: { name: 'Nuclear' } });
   });
 
+  it('serves IR codes to everyone and lets only the admin edit them', async () => {
+    const list = await call('/api/ir-codes');
+    expect(list.status).toBe(200);
+    expect(list.body.ct.code).toBe('4216');
+    expect(list.body.procedures.find((x: any) => x.id === 'lung-bx')).toMatchObject({ codes: ['3960'], guidance: 'ct' });
+    expect((await call('/api/ir-codes', { method: 'PUT', json: list.body })).status).toBe(403);
+    expect((await call('/api/ir-codes', { method: 'PUT', token: viewer, json: list.body })).status).toBe(403);
+    expect((await call('/api/ir-codes', { method: 'PUT', token: admin, json: { ...list.body, procedures: [{ name: 'X', codes: [], guidance: 'ct' }] } })).status).toBe(400);
+    const edited = { ...list.body, procedures: [...list.body.procedures, { name: 'Test proc', category: 'Biopsies', codes: ['9999'], guidance: 'us' }] };
+    expect((await call('/api/ir-codes', { method: 'PUT', token: admin, json: edited })).status).toBe(200);
+    const after = await call('/api/ir-codes');
+    expect(after.body.procedures.at(-1)).toMatchObject({ name: 'Test proc', codes: ['9999'], guidance: 'us' });
+  });
+
   it('renames a rotation everywhere and protects special roles', async () => {
     const r = await call('/api/rotations/Nuclear', { method: 'PUT', token: admin, json: { name: 'Nuclear Medicine' } });
     expect(r.status).toBe(200);
