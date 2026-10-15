@@ -45,6 +45,22 @@ describe('snapshot persistence', () => {
     expect(getCalls(openDb(store.data!))['2026-10-02']).toBe('R01');
   });
 
+  it('skips saving when nothing actually changed', async () => {
+    const db = openDb(':memory:');
+    const store = memoryStore();
+    const saver = snapshotSaver(db, store, 10_000);
+    saver.changed();
+    await saver.flush();
+    expect(store.saves).toBe(1);
+    saver.changed(); // e.g. a login that wrote nothing
+    await saver.flush();
+    expect(store.saves).toBe(1);
+    setCall(db, '2026-10-03', 'R02');
+    saver.changed();
+    await saver.flush();
+    expect(store.saves).toBe(2);
+  });
+
   it('retries after a failed save', async () => {
     const db = openDb(':memory:');
     const store = memoryStore();

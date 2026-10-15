@@ -44,6 +44,7 @@ export function snapshotSaver(db: DB, store: SnapshotStore, delayMs = 1500) {
   let timer: NodeJS.Timeout | null = null;
   let pending = false;
   let chain: Promise<void> = Promise.resolve();
+  let lastSaved: Buffer | null = null; // skip identical snapshots so no-op requests never wake the database
 
   const flush = (): Promise<void> => {
     if (timer) clearTimeout(timer);
@@ -51,8 +52,12 @@ export function snapshotSaver(db: DB, store: SnapshotStore, delayMs = 1500) {
     if (!pending) return chain;
     pending = false;
     const data = db.serialize();
+    if (lastSaved?.equals(data)) return chain;
     chain = chain
       .then(() => store.save(data))
+      .then(() => {
+        lastSaved = data;
+      })
       .catch((e) => {
         pending = true; // retry on the next change / flush
         console.error('Saving database snapshot failed:', (e as Error).message);
