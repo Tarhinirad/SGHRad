@@ -9,6 +9,8 @@ import type { DB } from './db';
 export interface SnapshotStore {
   load(): Promise<Buffer | null>;
   save(data: Buffer): Promise<void>;
+  /** Cheap query that counts as database activity (keeps free hosts such as Supabase from pausing the project). */
+  ping(): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -34,6 +36,9 @@ export async function postgresStore(url: string): Promise<SnapshotStore> {
          ON CONFLICT (id) DO UPDATE SET data = EXCLUDED.data, updated_at = now()`,
         [data],
       );
+    },
+    async ping() {
+      await pool.query('SELECT 1');
     },
     close: () => pool.end(),
   };
