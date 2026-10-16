@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CALL_TYPES, MEDALS, academicYearStartFor, addDays, addMonths, callStats, daysInRange, firstOfMonth, formatDateLong, lastOfMonth, monthLabel, startOfWeek, weekday, type CallType, type MedalKind } from '@shared';
 import { api } from '../api';
-import { IssueList, Modal, PageHeader, PrintButton, ResidentName, shortName } from '../components/ui';
+import { IssueList, Modal, PageHeader, PrintButton, ResidentName } from '../components/ui';
 import { useStore } from '../store';
 
 const CALL_CODES = new Set(['vacation-and-call', 'consecutive-calls', 'external-on-call', 'inactive-on-call', 'unknown-resident']);
 
 export function CallsPage() {
-  const { data, engine, isAdmin, resById } = useStore();
+  const { data, engine, isAdmin, resById, displayName } = useStore();
   const [month, setMonth] = useState(data.today.slice(0, 7));
   const [editing, setEditing] = useState<string | null>(null);
   const from = firstOfMonth(month);
@@ -66,10 +66,7 @@ export function CallsPage() {
                 {inMonth && (
                   <div className={`mt-0.5 text-[11px] font-medium leading-tight sm:text-xs ${r ? 'text-navy-ink' : 'text-red-400'}`}>
                     {r ? (
-                      <>
-                        <span className="sm:hidden">{r.name.split(' ').map((p) => p[0]).join('')}</span>
-                        <span className="hidden sm:inline">{shortName(r.name)}</span>
-                      </>
+                      displayName(r)
                     ) : id ? (
                       id
                     ) : (
@@ -97,7 +94,7 @@ export function CallsPage() {
 }
 
 function CallEditor({ date, onClose, onNavigate }: { date: string; onClose: () => void; onNavigate: (d: string) => void }) {
-  const { data, engine, mutate } = useStore();
+  const { data, engine, mutate, displayName } = useStore();
   const current = data.calls[date] ?? '';
   const prev = data.calls[addDays(date, -1)];
   const next = data.calls[addDays(date, 1)];
@@ -146,7 +143,7 @@ function CallEditor({ date, onClose, onNavigate }: { date: string; onClose: () =
                   onClick={() => void save(r.id)}
                 >
                   <span>
-                    {r.name} <span className="text-xs text-muted">{r.year}</span>
+                    {displayName(r)} <span className="text-xs text-muted">{r.year}</span>
                   </span>
                   <span className={`text-right text-[11px] ${bad ? 'font-semibold text-red-600' : 'text-amber-700'}`}>{n.join(' · ')}</span>
                 </button>

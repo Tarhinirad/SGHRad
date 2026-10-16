@@ -5,7 +5,7 @@ import { Modal, PageHeader, PrintButton, ResidentName } from '../components/ui';
 import { useStore } from '../store';
 
 export function VacationsPage() {
-  const { data, isAdmin, mutate } = useStore();
+  const { data, isAdmin, mutate, displayName } = useStore();
   const [editing, setEditing] = useState<Vacation | null>(null);
   const [filter, setFilter] = useState<'upcoming' | 'all'>('upcoming');
   const [resident, setResident] = useState('');
@@ -46,7 +46,7 @@ export function VacationsPage() {
             <option value="">All residents</option>
             {data.residents.map((r) => (
               <option key={r.id} value={r.id}>
-                {r.name}
+                {displayName(r)}
               </option>
             ))}
           </select>
@@ -121,7 +121,7 @@ export function VacationsPage() {
 }
 
 function VacationCalendar({ month, setMonth }: { month: string; setMonth: (m: string) => void }) {
-  const { data, engine } = useStore();
+  const { data, engine, displayName } = useStore();
   const days = daysInRange(firstOfMonth(month), lastOfMonth(month));
   const residents = data.residents.filter((r) => r.active);
   const onVac = (d: string) => residents.filter((r) => engine.vacationOn(r.id, d)).length;
@@ -151,13 +151,13 @@ function VacationCalendar({ month, setMonth }: { month: string; setMonth: (m: st
           <tbody>
             {residents.map((r) => (
               <tr key={r.id} className="border-t border-line">
-                <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-2 py-0.5 text-xs">{r.name}</td>
+                <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-2 py-0.5 text-xs">{displayName(r)}</td>
                 {days.map((d) => {
                   const v = engine.vacationOn(r.id, d);
                   return (
                     <td
                       key={d}
-                      title={v ? `${r.name}: ${v.start} → ${v.end}${v.notes ? ` (${v.notes})` : ''}` : undefined}
+                      title={v ? `${displayName(r)}: ${v.start} → ${v.end}${v.notes ? ` (${v.notes})` : ''}` : undefined}
                       className={`h-5 border-l border-line ${v ? 'bg-green-500' : weekday(d) === 0 || weekday(d) === 6 ? 'bg-[#f7f8fa]' : ''}`}
                     />
                   );

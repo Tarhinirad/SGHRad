@@ -11,7 +11,7 @@ const fmt = (d: string, o: Intl.DateTimeFormatOptions) => parseISO(d).toLocaleDa
 
 export function DayPage() {
   const { date: param } = useParams();
-  const { data, engine, isAdmin, resById, rotByName } = useStore();
+  const { data, engine, isAdmin, resById, rotByName, displayName } = useStore();
   const navigate = useNavigate();
   const date = param && isValidISO(param) ? param : data.today;
   const day = engine.day(date);
@@ -99,7 +99,7 @@ export function DayPage() {
           </div>
           {onCall ? (
             <>
-              <div className="truncate font-display text-2xl font-semibold md:text-[30px]">{onCall.name}</div>
+              <div className="truncate font-display text-2xl font-semibold md:text-[30px]">{displayName(onCall)}</div>
               <div className="text-sm text-[#c3cde3]">{onCall.phone || 'No number on file'}</div>
             </>
           ) : shift.current ? (
@@ -309,7 +309,7 @@ function StatusCard({ title, children }: { title: string; children: React.ReactN
 }
 
 function CoverChooser({ day }: { day: DaySchedule }) {
-  const { data, mutate } = useStore();
+  const { data, mutate, displayName } = useStore();
   const current = data.coverChoices[day.date] ?? '';
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-line bg-[#fdf6e3] px-5 py-3 text-sm">
@@ -324,7 +324,7 @@ function CoverChooser({ day }: { day: DaySchedule }) {
           const r = day.residents.find((x) => x.residentId === id)!;
           return (
             <option key={id} value={id}>
-              {data.residents.find((x) => x.id === id)?.name} – {r.monthly}
+              {displayName(data.residents.find((x) => x.id === id)!)} – {r.monthly}
             </option>
           );
         })}
@@ -334,7 +334,7 @@ function CoverChooser({ day }: { day: DaySchedule }) {
 }
 
 function AdjustModal({ day, onClose }: { day: DaySchedule; onClose: () => void }) {
-  const { data, mutate, resById } = useStore();
+  const { data, mutate, resById, displayName } = useStore();
   const overrides = data.overrides[day.date] ?? {};
   const set = (rid: string, v: string) => mutate(() => api(`/api/overrides/${day.date}/${rid}`, { method: 'PUT', json: { assignment: v } }));
   return (
@@ -348,7 +348,7 @@ function AdjustModal({ day, onClose }: { day: DaySchedule; onClose: () => void }
           {day.residents.map((r) => (
             <tr key={r.residentId}>
               <td>
-                <div className="font-medium">{resById.get(r.residentId)?.name}</div>
+                <div className="font-medium">{displayName(resById.get(r.residentId)!)}</div>
                 <div className="text-xs text-muted">
                   {r.monthly ?? 'unassigned'} · {r.status}
                 </div>
@@ -357,7 +357,7 @@ function AdjustModal({ day, onClose }: { day: DaySchedule; onClose: () => void }
                 <ComboSelect
                   value={overrides[r.residentId] ?? ''}
                   onChange={(v) => void set(r.residentId, v)}
-                  label={`${resById.get(r.residentId)?.name} on ${day.date}`}
+                  label={`${displayName(resById.get(r.residentId)!)} on ${day.date}`}
                   blank={`Auto (${r.manual ? 'computed' : r.assignment ?? r.status})`}
                   monthlyOnly={false}
                   noSpecial

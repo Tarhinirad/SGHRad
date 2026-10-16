@@ -6,7 +6,7 @@ import { PageHeader, PrintButton, ComboSelect, RotationChip, YearSelect } from '
 import { useStore } from '../store';
 
 export function YearPage() {
-  const { data, isAdmin, mutate, currentYearStart, yearOf, engine } = useStore();
+  const { data, isAdmin, mutate, currentYearStart, yearOf, engine, displayName } = useStore();
   const [yearStart, setYearStart] = useState(currentYearStart);
   const [showInactive, setShowInactive] = useState(false);
   const { months } = yearOf(yearStart);
@@ -46,10 +46,10 @@ export function YearPage() {
                 <td className="sticky left-0 z-10 whitespace-nowrap bg-white">
                   {isAdmin ? (
                     <Link to={`/residents/${r.id}`} className="font-medium hover:underline">
-                      {r.name}
+                      {displayName(r)}
                     </Link>
                   ) : (
-                    <span className="font-medium">{r.name}</span>
+                    <span className="font-medium">{displayName(r)}</span>
                   )}
                   <div className="text-[10px] text-muted">
                     {isAdmin && <>{r.id} · </>}{r.year}
@@ -60,7 +60,7 @@ export function YearPage() {
                   return (
                     <td key={m} className="p-1 text-center">
                       {isAdmin ? (
-                        <MonthCell value={v} label={`${r.name} ${monthLabel(m)}`} onChange={(nv) => void set(r.id, m, nv)} />
+                        <MonthCell value={v} label={`${displayName(r)} ${monthLabel(m)}`} onChange={(nv) => void set(r.id, m, nv)} />
                       ) : (
                         <RotationChip name={v || null} small />
                       )}

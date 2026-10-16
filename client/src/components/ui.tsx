@@ -130,11 +130,11 @@ export function PhoneLink({ phone, className = '' }: { phone?: string; className
 
 /** Resident name linking to their page, optionally with a tap-to-call link. */
 export function ResidentName({ id, phone = false, short = false }: { id: string | null | undefined; phone?: boolean; short?: boolean }) {
-  const { resById, isAdmin } = useStore();
+  const { resById, isAdmin, displayName } = useStore();
   if (!id) return <span className="text-muted">—</span>;
   const r = resById.get(id);
   if (!r) return <span className="text-red-700">{id}?</span>;
-  const label = short ? shortName(r.name) : r.name;
+  const label = displayName(r);
   return (
     <span className="inline-flex flex-wrap items-baseline gap-x-2">
       {isAdmin ? (
