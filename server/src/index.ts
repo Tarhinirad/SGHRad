@@ -15,6 +15,9 @@ async function main() {
     db = openDb(snap ?? ':memory:');
     saver = snapshotSaver(db, store);
     console.log(snap ? `Loaded database snapshot from Postgres (${snap.length} bytes).` : 'No snapshot in Postgres yet – starting fresh.');
+    // Free Postgres hosts pause idle projects; the app only writes on edits, so touch the database twice a day.
+    const keepAlive = setInterval(() => store.ping().catch((e) => console.error('Database keep-alive failed:', (e as Error).message)), 12 * 60 * 60 * 1000);
+    keepAlive.unref();
     const shutdown = async () => {
       await saver!.flush();
       await store.close();

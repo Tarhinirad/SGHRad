@@ -14,6 +14,7 @@ function memoryStore(): SnapshotStore & { saves: number; data: Buffer | null } {
       s.saves++;
       s.data = d;
     },
+    async ping() {},
     async close() {},
   };
   return s;
