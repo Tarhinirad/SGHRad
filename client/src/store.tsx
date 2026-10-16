@@ -24,6 +24,8 @@ interface Store {
   isAdmin: boolean;
   userName: string;
   resById: Map<string, Resident>;
+  /** Name shown in schedules: first name, plus the last initial when two residents share a first name. */
+  displayName: (r: Pick<Resident, 'id' | 'name'>) => string;
   rotByName: Map<string, Rotation>;
   /** Run an edit, then reload; shows errors via alert. */
   mutate: (fn: () => Promise<unknown>) => Promise<boolean>;
@@ -62,8 +64,17 @@ export function DataProvider({ role, name, children }: { role: 'admin' | 'viewer
     // Resident lists everywhere show PGY-4 first down to PGY-1 (stable within a year); the rule engine keeps the original order.
     const pgy = (r: Resident) => Number(/(\d)/.exec(r.year)?.[1] ?? 0);
     const residents = data.residents.map((r, i) => ({ r, i })).sort((a, b) => pgy(b.r) - pgy(a.r) || a.i - b.i).map((x) => x.r);
+    const first = (n: string) => n.trim().split(/\s+/)[0] ?? n;
+    const counts = new Map<string, number>();
+    for (const r of residents) counts.set(first(r.name).toLowerCase(), (counts.get(first(r.name).toLowerCase()) ?? 0) + 1);
+    const displayName = (r: Pick<Resident, 'id' | 'name'>) => {
+      const parts = r.name.trim().split(/\s+/);
+      if (parts.length < 2 || (counts.get(parts[0].toLowerCase()) ?? 0) < 2) return parts[0] || r.id;
+      return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+    };
     return {
       data: { ...data, residents },
+      displayName,
       engine: new ScheduleEngine(data),
       reload,
       isAdmin: role === 'admin',
