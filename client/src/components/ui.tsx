@@ -2,7 +2,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { addMonths, comboParts, formatDateShort, monthLabel, splitParts, type Issue, type MonthKey } from '@shared';
 import { useStore } from '../store';
-import { PhoneIcon, PrintIcon } from './icons';
+import { whatsappHref } from '@shared';
+import { PrintIcon, WhatsAppIcon } from './icons';
 
 /** Rotation colours from the redesign: dot (accent), tint (background) and ink (text on tint). */
 export interface RotationColors {
@@ -114,21 +115,24 @@ export function RotationChip({ name, small }: { name: string | null; small?: boo
   );
 }
 
-export function telHref(phone: string) {
-  return `tel:${phone.replace(/[^\d+]/g, '')}`;
-}
-
 export function PhoneLink({ phone, className = '' }: { phone?: string; className?: string }) {
   if (!phone) return null;
   return (
-    <a href={telHref(phone)} className={`whitespace-nowrap text-brand-700 hover:underline ${className}`} onClick={(e) => e.stopPropagation()}>
-      <PhoneIcon size={13} className="mr-1 inline -translate-y-px" />
+    <a
+      href={whatsappHref(phone)}
+      target="_blank"
+      rel="noopener noreferrer"
+      title="Message on WhatsApp"
+      className={`whitespace-nowrap text-brand-700 hover:underline ${className}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <WhatsAppIcon size={13} className="mr-1 inline -translate-y-px" />
       {phone}
     </a>
   );
 }
 
-/** Resident name linking to their page, optionally with a tap-to-call link. */
+/** Resident name linking to their page, optionally with a WhatsApp link. */
 export function ResidentName({ id, phone = false, short = false }: { id: string | null | undefined; phone?: boolean; short?: boolean }) {
   const { resById, isAdmin, displayName } = useStore();
   if (!id) return <span className="text-muted">—</span>;
