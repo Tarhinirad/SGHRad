@@ -38,5 +38,8 @@ export const BellIcon = ({ size = 26, className, strokeWidth = 1.9 }: P) =>
 export const PhoneIcon = ({ size = 18, className, strokeWidth = 2 }: P) =>
   svg(size, strokeWidth, className, <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2" />);
 
+export const WhatsAppIcon = ({ size = 18, className, strokeWidth = 2 }: P) =>
+  svg(size, strokeWidth, className, <><path d="M3 21l1.7-5A8.5 8.5 0 1 1 8 19.3L3 21z" /><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.5-2-1-1 .8a4 4 0 0 1-2-2l.8-1-1-2L9 8.5z" /></>);
+
 export const PrintIcon = ({ size = 16, className, strokeWidth = 2 }: P) =>
   svg(size, strokeWidth, className, <><path d="M6 9V3h12v6" /><rect x="3" y="9" width="18" height="8" rx="2" /><path d="M6 14h12v7H6z" /></>);
