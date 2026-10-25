@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { addDays, formatDateShort, isValidISO, startOfWeek, type DaySchedule } from '@shared';
 import { PageHeader, PrintButton, ResidentName, RotationChip, RotationDot } from '../components/ui';
+import { WeekImage } from '../components/WeekImage';
 import { useStore } from '../store';
 
 export function WeekPage() {
@@ -8,7 +10,7 @@ export function WeekPage() {
   const { data, engine, isAdmin } = useStore();
   const navigate = useNavigate();
   const start = startOfWeek(param && isValidISO(param) ? param : data.today);
-  const days = engine.range(start, addDays(start, 6));
+  const days = useMemo(() => engine.range(start, addDays(start, 6)), [engine, start]);
   const rotations = Object.keys(days[0].rotations);
   const go = (d: string) => navigate(`/week/${d}`);
 
@@ -100,6 +102,7 @@ export function WeekPage() {
       <p className="mt-2 text-xs text-muted">
         Weekends and holidays are shaded. Click a date for phone numbers.
       </p>
+      <WeekImage start={start} days={days} />
     </div>
   );
 }
